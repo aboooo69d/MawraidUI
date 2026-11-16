@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>منصة موارد — تعز | إدارة وتوزيع الموارد الأساسية (الغاز، المياه، الوقود)</title>
+  <meta name="description" content="المنظومة الرقمية المركزية لإدارة وتوزيع الموارد الحيوية في مدينة تعز بعدالة وشفافية." />
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Tajawal', 'Noto Sans Arabic', 'system-ui', 'sans-serif'],
+          },
+          boxShadow: {
+            xs: '0 1px 2px 0 rgb(15 23 42 / 0.05)',
+            card: '0 1px 3px rgb(15 23 42 / 0.06), 0 8px 24px -8px rgb(15 23 42 / 0.10)',
+          },
+          spacing: { 13: '3.25rem', 18: '4.5rem' },
+          colors: {
+            mawarid: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              200: '#bae0fd',
+              300: '#7dc5fc',
+              400: '#38a5f8',
+              500: '#0e87ea',
+              600: '#026ac8',
+              700: '#0354a2',
+              800: '#074785',
+              900: '#0b3c6f',
+              950: '#07264a',
+            },
+            taiz: {
+              primary: '#0e2b4a',
+              accent: '#d97706',
+              water: '#0284c7',
+              gas: '#ea580c',
+              fuel: '#059669',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    section[id] { scroll-margin-top: 6rem; }
+    input, select, textarea { font-size: 16px; }
+    :focus-visible { outline: 3px solid #0e87ea; outline-offset: 2px; border-radius: 6px; }
+    input:focus-visible, textarea:focus-visible { outline: none; }
+    .skip-link { position: absolute; top: -100px; right: 1rem; z-index: 100; background: #0354a2; color: #fff; padding: .75rem 1.25rem; border-radius: .75rem; font-weight: 700; transition: top .2s; }
+    .skip-link:focus { top: 1rem; }
+    .hero-grid { background-image: radial-gradient(circle at 1px 1px, rgb(3 84 162 / 0.10) 1px, transparent 0); background-size: 22px 22px; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+    }
+    .fade-in { animation: fadeIn .3s cubic-bezier(0.16, 1, 0.3, 1); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased selection:bg-blue-600 selection:text-white min-h-screen">
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>
