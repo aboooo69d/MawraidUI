@@ -1,6 +1,6 @@
 // ═══════════ Auth Context — حالة الجلسة والمستخدم ═══════════
 import { createContext, useContext, useState } from 'react'
-import { authApi } from './api'
+import { authApi } from '../../services/api'
 
 const AuthCtx = createContext(null)
 
@@ -12,10 +12,14 @@ export function AuthProvider({ children }) {
     setUser(u)
     return u
   }
+
   async function logout() {
-    try { await authApi.logout() } catch {}
+    try {
+      await authApi.logout()
+    } catch {}
     setUser(null)
   }
+
   return <AuthCtx.Provider value={{ user, login, logout }}>{children}</AuthCtx.Provider>
 }
 

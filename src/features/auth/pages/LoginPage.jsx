@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
-import { useAuth } from '../auth'
-import { PHONE_RE } from '../api'
-import { Icons, BrandLogo, ErrorBanner, Label, PhoneInput, TextInput, PrimaryBtn, BackBtn } from '../ui'
+import { useAuth } from '../hooks/useAuth'
+import { PHONE_RE } from '../../../shared/constants/regex'
+import { Icons, BrandLogo, ErrorBanner, Label, PhoneInput, TextInput, PrimaryBtn, BackBtn } from '../../../shared/components/ui'
 import TurnstileWidget from '../components/TurnstileWidget'
 
 export default function Login({ go }) {

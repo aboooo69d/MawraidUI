@@ -1,7 +1,8 @@
 // ═══════════ شاشتَا استعادة وإعادة تعيين كلمة المرور ═══════════
 import { useRef, useState } from 'react'
-import { authApi, PHONE_RE } from '../api'
-import { Icons, BrandLogo, BackBtn, ErrorBanner, InfoBanner, Label, PhoneInput, TextInput, PrimaryBtn } from '../ui'
+import { authApi } from '../../../services/api'
+import { PHONE_RE } from '../../../shared/constants/regex'
+import { Icons, BrandLogo, BackBtn, ErrorBanner, InfoBanner, Label, PhoneInput, TextInput, PrimaryBtn } from '../../../shared/components/ui'
 import TurnstileWidget from '../components/TurnstileWidget'
 
 export function Forgot({ go }) {

@@ -1,7 +1,7 @@
 // ═══════════ شاشة التحقق OTP — POST /verify-phone + resend ═══════════
 import { useEffect, useRef, useState } from 'react'
-import { authApi } from '../api'
-import { Icons, BrandLogo, BackBtn, ErrorBanner, InfoBanner, PrimaryBtn } from '../ui'
+import { authApi } from '../../../services/api'
+import { Icons, BrandLogo, BackBtn, ErrorBanner, InfoBanner, PrimaryBtn } from '../../../shared/components/ui'
 
 export default function Otp({ go, phone }) {
   const [digits, setDigits] = useState(['', '', '', '', '', ''])

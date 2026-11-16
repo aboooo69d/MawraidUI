@@ -1,6 +1,6 @@
 // ═══════════ الصفحة الرئيسية — منصة موارد (تعز) ═══════════
 import { useState } from 'react'
-import { BrandLogo, Icons, PrimaryBtn, SecondaryBtn, ResourceBadge } from '../ui'
+import { BrandLogo, Icons, PrimaryBtn, SecondaryBtn, ResourceBadge } from '../../../shared/components/ui'
 
 export default function Home({ go }) {
   const [activeDistrict, setActiveDistrict] = useState('al-qahirah')

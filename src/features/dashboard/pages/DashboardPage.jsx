@@ -1,6 +1,6 @@
 // ═══════════ لوحة التحكم بعد الدخول — منصة موارد (تعز) ═══════════
-import { useAuth } from '../auth'
-import { Icons, BrandLogo, ResourceBadge } from '../ui'
+import { useAuth } from '../../auth/hooks/useAuth'
+import { Icons, BrandLogo, ResourceBadge } from '../../../shared/components/ui'
 
 export default function Dashboard({ go }) {
   const { user, logout } = useAuth()

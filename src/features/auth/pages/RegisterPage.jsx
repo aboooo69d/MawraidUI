@@ -1,7 +1,8 @@
 // ═══════════ شاشتا التسجيل: عميل (multipart) + مقدم خدمة (JSON) ═══════════
 import { useRef, useState } from 'react'
-import { authApi, PHONE_RE } from '../api'
-import { Icons, BrandLogo, BackBtn, ErrorBanner, Label, PhoneInput, TextInput, PrimaryBtn } from '../ui'
+import { authApi } from '../../../services/api'
+import { PHONE_RE } from '../../../shared/constants/regex'
+import { Icons, BrandLogo, BackBtn, ErrorBanner, Label, PhoneInput, TextInput, PrimaryBtn } from '../../../shared/components/ui'
 import TurnstileWidget from '../components/TurnstileWidget'
 
 function CategoryCard({ selected, onToggle, icon: Icon, title, description, children }) {
