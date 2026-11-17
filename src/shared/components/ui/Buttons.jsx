@@ -34,12 +34,13 @@ export function PrimaryBtn({ children, onClick, disabled, loading, className = '
   )
 }
 
-export function SecondaryBtn({ children, onClick, className = '', type = 'button' }) {
+export function SecondaryBtn({ children, onClick, disabled, className = '', type = 'button' }) {
   return (
     <button
       type={type}
       onClick={onClick}
-      className={`min-h-[44px] px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-bold transition shadow-sm active:bg-slate-100 cursor-pointer focus:outline-none focus:ring-2 focus:ring-mawarid-500 ${className}`}
+      disabled={disabled}
+      className={`min-h-[44px] px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-bold transition shadow-sm active:bg-slate-100 cursor-pointer focus:outline-none focus:ring-2 focus:ring-mawarid-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white ${className}`}
     >
       {children}
     </button>
