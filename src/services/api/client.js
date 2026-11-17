@@ -10,8 +10,9 @@ export class ApiError extends Error {
   }
 }
 
-// Envelope: { success: true, data } أو { success: false, error: { code, message } }
-export async function request(path, { method = 'GET', body, form, turnstileToken } = {}) {
+// Envelope: { success: true, data, meta } أو { success: false, error: { code, message } }
+// withMeta: تُرجع { data, meta } للمسارات المرقمة (السجلات) — القيمة الافتراضية تُرجع data فقط كما هي
+export async function request(path, { method = 'GET', body, form, turnstileToken, withMeta = false } = {}) {
   const opts = {
     method,
     credentials: 'include',
@@ -45,5 +46,5 @@ export async function request(path, { method = 'GET', body, form, turnstileToken
     })
   }
 
-  return data.data
+  return withMeta ? { data: data.data, meta: data.meta } : data.data
 }
