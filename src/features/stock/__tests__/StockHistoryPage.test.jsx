@@ -3,7 +3,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { screen, fireEvent, waitFor } from '@testing-library/react'
 import StockHistoryPage from '../pages/StockHistoryPage'
-import { STOCK, json, apiError, stubApi, renderWithAuth } from './helpers'
+import { STOCK, ok, apiError, stubApi, renderWithAuth } from './helpers'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -29,15 +29,15 @@ const TX_OUT = {
 
 function stubHistory(listHandler) {
   return stubApi(({ url, method }) => {
-    if (url.includes('/user/me/stock')) return json(STOCK)
+    if (url.includes('/user/me/stock')) return ok(STOCK)
     if (url.includes('/transactions') && method === 'GET') return listHandler(url)
-    return json({})
+    return ok({})
   })
 }
 
 describe('StockHistoryPage — العرض والفلترة والترقيم', () => {
   it('يعرض الحركات مع meta للترقيم', async () => {
-    stubHistory(() => json([TX_IN, TX_OUT], { page: 1, per_page: 20, total: 45, total_pages: 3 }))
+    stubHistory(() => ok([TX_IN, TX_OUT], { page: 1, per_page: 20, total: 45, total_pages: 3 }))
 
     renderWithAuth(<StockHistoryPage go={vi.fn()} />)
 
@@ -51,7 +51,7 @@ describe('StockHistoryPage — العرض والفلترة والترقيم', ()
 
   it('فلتر الوارد يعيد جلب الصفحة 1 مع is_in=true ويعرض النتائج المفلترة', async () => {
     const { calls } = stubHistory((url) =>
-      url.includes('is_in=true') ? json([TX_IN], { page: 1, per_page: 20, total: 1, total_pages: 1 }) : json([TX_IN, TX_OUT], { page: 1, per_page: 20, total: 45, total_pages: 3 })
+      url.includes('is_in=true') ? ok([TX_IN], { page: 1, per_page: 20, total: 1, total_pages: 1 }) : ok([TX_IN, TX_OUT], { page: 1, per_page: 20, total: 45, total_pages: 3 })
     )
 
     renderWithAuth(<StockHistoryPage go={vi.fn()} />)
@@ -70,8 +70,8 @@ describe('StockHistoryPage — العرض والفلترة والترقيم', ()
   it('زر التالي يجلب الصفحة 2', async () => {
     const { calls } = stubHistory((url) =>
       url.includes('page=2')
-        ? json([TX_OUT], { page: 2, per_page: 20, total: 45, total_pages: 3 })
-        : json([TX_IN], { page: 1, per_page: 20, total: 45, total_pages: 3 })
+        ? ok([TX_OUT], { page: 2, per_page: 20, total: 45, total_pages: 3 })
+        : ok([TX_IN], { page: 1, per_page: 20, total: 45, total_pages: 3 })
     )
 
     renderWithAuth(<StockHistoryPage go={vi.fn()} />)
@@ -85,7 +85,7 @@ describe('StockHistoryPage — العرض والفلترة والترقيم', ()
   })
 
   it('يعرض حالة فارغة عند عدم وجود حركات', async () => {
-    stubHistory(() => json([], { page: 1, per_page: 20, total: 0, total_pages: 0 }))
+    stubHistory(() => ok([], { page: 1, per_page: 20, total: 0, total_pages: 0 }))
 
     renderWithAuth(<StockHistoryPage go={vi.fn()} />)
 
@@ -104,10 +104,10 @@ describe('StockHistoryPage — العرض والفلترة والترقيم', ()
 
   it('يتجاهل الاستجابة القديمة عند تغيير الفلتر بسرعة', async () => {
     stubHistory((url) => {
-      if (url.includes('is_in=true')) return json([TX_IN], { page: 1, per_page: 20, total: 1, total_pages: 1 })
+      if (url.includes('is_in=true')) return ok([TX_IN], { page: 1, per_page: 20, total: 1, total_pages: 1 })
       // الاستجابة الأصلية (الكل) متأخرة — يجب ألا تُظهر بعد الفلترة
       return new Promise((resolve) =>
-        setTimeout(() => resolve(json([TX_OUT], { page: 1, per_page: 20, total: 1, total_pages: 1 })), 150)
+        setTimeout(() => resolve(ok([TX_OUT], { page: 1, per_page: 20, total: 1, total_pages: 1 })), 150)
       )
     })
 

@@ -4,7 +4,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { screen, fireEvent, waitFor } from '@testing-library/react'
 import StockTransactionPage from '../pages/StockTransactionPage'
 import { ROUTES } from '../../../shared/constants/routes'
-import { STOCK, json, apiError, stubApi, renderWithAuth } from './helpers'
+import { STOCK, ok, apiError, stubApi, renderWithAuth } from './helpers'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -13,9 +13,9 @@ afterEach(() => {
 
 function stubTx(postHandler) {
   return stubApi(({ url, method, body }) => {
-    if (url.includes('/user/me/stock')) return json(STOCK)
+    if (url.includes('/user/me/stock')) return ok(STOCK)
     if (method === 'POST' && url.includes('/transactions')) return postHandler(body)
-    return json({})
+    return ok({})
   })
 }
 
@@ -26,7 +26,7 @@ const fillForm = () => {
 
 describe('StockTransactionPage — حركة وارد', () => {
   it('يعرض نموذج الوارد ويرسل is_in=true وينتقل للوحة بعد النجاح', async () => {
-    const { calls } = stubTx(() => json({ id: 't1' }, 200))
+    const { calls } = stubTx(() => ok({ id: 't1' }))
     const go = vi.fn()
     const showToast = vi.fn()
 
@@ -46,7 +46,7 @@ describe('StockTransactionPage — حركة وارد', () => {
   })
 
   it('يرفض كمية غير موجبة صحيحة محلياً', async () => {
-    const { calls } = stubTx(() => json({ id: 't1' }))
+    const { calls } = stubTx(() => ok({ id: 't1' }))
     renderWithAuth(<StockTransactionPage go={vi.fn()} showToast={vi.fn()} direction="in" />)
 
     await screen.findByText('إضافة كمية (وارد)')
@@ -62,7 +62,7 @@ describe('StockTransactionPage — حركة وارد', () => {
     const { calls } = stubTx(
       () =>
         new Promise((resolve) =>
-          setTimeout(() => resolve(json({ id: 't1' })), 50)
+          setTimeout(() => resolve(ok({ id: 't1' })), 50)
         )
     )
     renderWithAuth(<StockTransactionPage go={vi.fn()} showToast={vi.fn()} direction="in" />)
@@ -80,7 +80,7 @@ describe('StockTransactionPage — حركة وارد', () => {
 
 describe('StockTransactionPage — حركة منصرف', () => {
   it('يعرض نموذج المنصرف ويرسل is_in=false', async () => {
-    const { calls } = stubTx(() => json({ id: 't2' }))
+    const { calls } = stubTx(() => ok({ id: 't2' }))
     const go = vi.fn()
 
     renderWithAuth(<StockTransactionPage go={go} showToast={vi.fn()} direction="out" />)
@@ -116,7 +116,7 @@ describe('StockTransactionPage — حركة منصرف', () => {
   })
 
   it('يعيد التوجيه للوحة عند اتجاه غير صالح', async () => {
-    stubTx(() => json({}))
+    stubTx(() => ok({}))
     const go = vi.fn()
 
     renderWithAuth(<StockTransactionPage go={go} showToast={vi.fn()} direction="sideways" />)

@@ -4,7 +4,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { screen, fireEvent, waitFor } from '@testing-library/react'
 import ProviderStockCard from '../components/ProviderStockCard'
 import { ROUTES } from '../../../shared/constants/routes'
-import { STOCK, json, apiError, stubApi, renderWithAuth } from './helpers'
+import { STOCK, ok, apiError, stubApi, renderWithAuth } from './helpers'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -15,7 +15,7 @@ describe('ProviderStockCard — حالات اكتشاف المخزون', () => {
   it('يعرض حالة تحميل ثم «لا يوجد مخزون مسجل» عند 404/1600 مع إجراء الإنشاء', async () => {
     stubApi(({ url }) => {
       if (url.includes('/user/me/stock')) return apiError(404, 1600, 'stock not found')
-      return json({})
+      return ok({})
     })
     const go = vi.fn()
 
@@ -30,8 +30,8 @@ describe('ProviderStockCard — حالات اكتشاف المخزون', () => {
 
   it('يعرض ملخص المخزون عند 200 بدون زر إنشاء آخر', async () => {
     stubApi(({ url }) => {
-      if (url.includes('/user/me/stock')) return json(STOCK)
-      return json({})
+      if (url.includes('/user/me/stock')) return ok(STOCK)
+      return ok({})
     })
     const go = vi.fn()
 
@@ -51,7 +51,7 @@ describe('ProviderStockCard — حالات اكتشاف المخزون', () => {
   it('يعرض خطأ مع إعادة محاولة (لا يعامل أخطاء الخادم كبيانات فارغة)', async () => {
     const { calls } = stubApi(({ url }) => {
       if (url.includes('/user/me/stock')) return apiError(500, 5000, 'server error')
-      return json({})
+      return ok({})
     })
     const go = vi.fn()
 
@@ -67,7 +67,7 @@ describe('ProviderStockCard — حالات اكتشاف المخزون', () => {
   it('يعرض حالة انتهاء الجلسة عند 401', async () => {
     stubApi(({ url }) => {
       if (url.includes('/user/me/stock')) return apiError(401, 1100, 'unauthorized')
-      return json({})
+      return ok({})
     })
 
     renderWithAuth(<ProviderStockCard go={vi.fn()} />)

@@ -3,7 +3,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { screen, fireEvent, waitFor } from '@testing-library/react'
 import StockUnitsPage from '../pages/StockUnitsPage'
-import { STOCK, json, apiError, stubApi, renderWithAuth } from './helpers'
+import { STOCK, ok, apiError, stubApi, renderWithAuth } from './helpers'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -12,16 +12,16 @@ afterEach(() => {
 
 function stubUnits(unitHandler) {
   return stubApi(({ url, method, body }) => {
-    if (url.includes('/user/me/stock')) return json(STOCK)
+    if (url.includes('/user/me/stock')) return ok(STOCK)
     if (method === 'POST' && url.includes('/units')) return unitHandler({ method, url, body })
     if (method === 'PATCH' && url.includes('/units/')) return unitHandler({ method, url, body })
-    return json({})
+    return ok({})
   })
 }
 
 describe('StockUnitsPage — عرض الوحدات', () => {
   it('يعرض الوحدات الرئيسية والفرعية مع المعاملات', async () => {
-    stubUnits(() => json({ id: 12 }))
+    stubUnits(() => ok({ id: 12 }))
 
     renderWithAuth(<StockUnitsPage go={vi.fn()} showToast={vi.fn()} />)
 
@@ -29,13 +29,16 @@ describe('StockUnitsPage — عرض الوحدات', () => {
     expect(screen.getByText('كرتون')).toBeTruthy()
     expect(screen.getByText('رئيسية')).toBeTruthy()
     expect(screen.getByText('فرعية')).toBeTruthy()
-    expect(screen.getAllByText(/معامل التحويل/).length).toBe(2) // لكل وحدة معاملها
+    const rows = document.querySelectorAll('ul li')
+    expect(rows.length).toBe(2) // وحدتان: رئيسية + فرعية
+    expect(rows[0].textContent).toContain('معامل التحويل: 1') // الرئيسية rate=1
+    expect(rows[1].textContent).toContain('معامل التحويل: 12') // الفرعية rate=12
   })
 })
 
 describe('StockUnitsPage — إضافة وحدة فرعية', () => {
   it('يرسل POST مع is_main=false ويحدّث البيانات', async () => {
-    const { calls } = stubUnits(() => json({ id: 12 }))
+    const { calls } = stubUnits(() => ok({ id: 12 }))
     const showToast = vi.fn()
 
     renderWithAuth(<StockUnitsPage go={vi.fn()} showToast={showToast} />)
@@ -69,7 +72,7 @@ describe('StockUnitsPage — إضافة وحدة فرعية', () => {
   })
 
   it('يرفض الاسم المكرر محلياً دون إرسال', async () => {
-    const { calls } = stubUnits(() => json({ id: 12 }))
+    const { calls } = stubUnits(() => ok({ id: 12 }))
 
     renderWithAuth(<StockUnitsPage go={vi.fn()} showToast={vi.fn()} />)
 
@@ -85,7 +88,7 @@ describe('StockUnitsPage — إضافة وحدة فرعية', () => {
 
 describe('StockUnitsPage — تعديل الوحدات', () => {
   it('يمنع تعديل معامل الوحدة الرئيسية (حقل معطّل بقيمة 1)', async () => {
-    stubUnits(() => json({ id: 10 }))
+    stubUnits(() => ok({ id: 10 }))
 
     renderWithAuth(<StockUnitsPage go={vi.fn()} showToast={vi.fn()} />)
 
@@ -100,7 +103,7 @@ describe('StockUnitsPage — تعديل الوحدات', () => {
   })
 
   it('يعدّل وحدة فرعية (اسم + معامل) ويعيد تحميل البيانات', async () => {
-    const { calls } = stubUnits(() => json({ id: 11 }))
+    const { calls } = stubUnits(() => ok({ id: 11 }))
     const showToast = vi.fn()
 
     renderWithAuth(<StockUnitsPage go={vi.fn()} showToast={showToast} />)
@@ -134,7 +137,7 @@ describe('StockUnitsPage — تعديل الوحدات', () => {
       }
       // إعادة المحاولة بالاسم فقط → مقبولة
       expect(body).toEqual({ name: 'كرتون كبير' })
-      return json({ id: 11 })
+      return ok({ id: 11 })
     })
     const showToast = vi.fn()
 

@@ -4,7 +4,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { screen, fireEvent, waitFor } from '@testing-library/react'
 import StockCreatePage from '../pages/StockCreatePage'
 import { ROUTES } from '../../../shared/constants/routes'
-import { STOCK, STOCK_TYPES, json, apiError, stubApi, renderWithAuth } from './helpers'
+import { STOCK, STOCK_TYPES, ok, apiError, stubApi, renderWithAuth } from './helpers'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -13,10 +13,10 @@ afterEach(() => {
 
 function stubTypes(extra) {
   return stubApi(({ url, method, body }) => {
-    if (url.includes('/stocks/types')) return json(STOCK_TYPES)
-    if (url.includes('/user/me/stock')) return json(STOCK)
-    if (method === 'POST' && url.endsWith('/api/v1/stocks')) return extra(body) || json({ id: 'new' })
-    return json({})
+    if (url.includes('/stocks/types')) return ok(STOCK_TYPES)
+    if (url.includes('/user/me/stock')) return ok(STOCK)
+    if (method === 'POST' && url.endsWith('/api/v1/stocks')) return ok({ id: 'new' })
+    return ok({})
   })
 }
 
@@ -99,13 +99,13 @@ describe('StockCreatePage — التحقق والإنشاء', () => {
   it('عند 1611 (مخزون موجود) ينتقل إلى لوحة المخزون دون إعادة محاولة الإنشاء', async () => {
     let posts = 0
     const { calls } = stubApi(({ url, method }) => {
-      if (url.includes('/stocks/types')) return json(STOCK_TYPES)
+      if (url.includes('/stocks/types')) return ok(STOCK_TYPES)
       if (method === 'POST' && url.endsWith('/api/v1/stocks')) {
         posts += 1
         return apiError(409, 1611, 'stock already exists')
       }
-      if (url.includes('/user/me/stock')) return json(STOCK)
-      return json({})
+      if (url.includes('/user/me/stock')) return ok(STOCK)
+      return ok({})
     })
     const go = vi.fn()
     const showToast = vi.fn()

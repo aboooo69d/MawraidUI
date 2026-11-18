@@ -3,11 +3,17 @@ import { vi } from 'vitest'
 import { render } from '@testing-library/react'
 import { AuthProvider } from '../../../app/providers/AuthProvider'
 
+// إغفال JSON خام — تُستخدم فقط داخل apiError (الذي يبني الغلاف بنفسه)
 export const json = (payload, status = 200) =>
   new Response(JSON.stringify(payload), {
     status,
     headers: { 'Content-Type': 'application/json' },
   })
+
+// نجاح مغلّف بغلاف Nova: { success: true, data, meta? }
+// request() تُرجع data.data — لذا يجب أن تأتي البيانات داخل data دائماً
+export const ok = (data, meta) =>
+  json(meta !== undefined && meta !== null ? { success: true, data, meta } : { success: true, data })
 
 export const apiError = (status, code, message) =>
   json({ success: false, error: { status, code, message } }, status)
