@@ -1,6 +1,7 @@
 // ═══════════ لوحة التحكم بعد الدخول — منصة موارد (تعز) ═══════════
 import { useAuth } from '../../auth/hooks/useAuth'
 import { Icons, BrandLogo, ResourceBadge } from '../../../shared/components/ui'
+import ProviderStockCard from '../../stock/components/ProviderStockCard'
 
 export default function Dashboard({ go }) {
   const { user, logout } = useAuth()
@@ -73,6 +74,14 @@ export default function Dashboard({ go }) {
             </div>
           </div>
         </div>
+
+        {/* ── بطاقة المخزون (للمزود فقط — لا تظهر للمستفيدين) ── */}
+        {isProvider && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-black text-slate-900">إدارة المخزون</h2>
+            <ProviderStockCard go={go} />
+          </div>
+        )}
 
         {/* بطاقات حالة الموارد والحصص */}
         <div className="space-y-4">

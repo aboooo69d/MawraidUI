@@ -9,6 +9,32 @@ import { RegisterConsumer, RegisterProvider } from '../features/auth/pages/Regis
 import OtpPage from '../features/auth/pages/OtpPage'
 import { Forgot, Reset } from '../features/auth/pages/PasswordPage'
 import DashboardPage from '../features/dashboard/pages/DashboardPage'
+import StockCreatePage from '../features/stock/pages/StockCreatePage'
+import StockDashboardPage from '../features/stock/pages/StockDashboardPage'
+import StockTransactionPage from '../features/stock/pages/StockTransactionPage'
+import StockUnitsPage from '../features/stock/pages/StockUnitsPage'
+import StockHistoryPage from '../features/stock/pages/StockHistoryPage'
+
+// شاشات ميزة المخزون — متاحة لحسابات مزودي الخدمة فقط
+const STOCK_SCREENS = [
+  ROUTES.STOCK_CREATE,
+  ROUTES.STOCK_DASHBOARD,
+  ROUTES.STOCK_TRANSACTION,
+  ROUTES.STOCK_UNITS,
+  ROUTES.STOCK_HISTORY,
+]
+
+// حماية شاشات المخزون: تتطلب جلسة نشطة وصلاحية provider
+// بقية الشاشات: وجود جلسة يوجّه المستخدم إلى لوحة التحكم (سواء كان على شاشات الدخول)
+export function resolveCurrentScreen(screen, user) {
+  if (STOCK_SCREENS.includes(screen)) {
+    if (!user) return ROUTES.LOGIN
+    if (user.role_name !== 'provider') return ROUTES.DASHBOARD
+    return screen
+  }
+  if (user && screen !== ROUTES.DASHBOARD && screen !== ROUTES.HOME) return ROUTES.DASHBOARD
+  return screen
+}
 
 function Shell() {
   const { user } = useAuth()
@@ -36,11 +62,15 @@ function Shell() {
     [ROUTES.FORGOT_PASSWORD]: <Forgot go={go} />,
     [ROUTES.RESET_PASSWORD]: <Reset go={go} phone={params.phone} />,
     [ROUTES.DASHBOARD]: <DashboardPage go={go} />,
+    // ── ميزة المخزون (provider only) ──
+    [ROUTES.STOCK_CREATE]: <StockCreatePage go={go} showToast={showToast} />,
+    [ROUTES.STOCK_DASHBOARD]: <StockDashboardPage go={go} showToast={showToast} />,
+    [ROUTES.STOCK_TRANSACTION]: <StockTransactionPage go={go} showToast={showToast} direction={params.direction} />,
+    [ROUTES.STOCK_UNITS]: <StockUnitsPage go={go} showToast={showToast} />,
+    [ROUTES.STOCK_HISTORY]: <StockHistoryPage go={go} showToast={showToast} />,
   }
 
-  // إذا كانت هناك جلسة نشطة والمستخدم على شاشات الدخول → يتم توجيهه إلى لوحة التحكم
-  const current =
-    user && screen !== ROUTES.DASHBOARD && screen !== ROUTES.HOME ? ROUTES.DASHBOARD : screen
+  const current = resolveCurrentScreen(screen, user)
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col selection:bg-mawarid-700 selection:text-white">
