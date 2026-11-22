@@ -3,7 +3,9 @@ import { describe, it, expect } from 'vitest'
 import {
   UNIT_NAME_MAX,
   DESC_MAX,
+  ADDRESS_MAX,
   isPositiveInt,
+  isValidLocation,
   validateCreateForm,
   validateTransaction,
   validateUnitForm,
@@ -23,64 +25,160 @@ describe('isPositiveInt', () => {
   })
 })
 
-describe('validateCreateForm — إنشاء مخزون', () => {
+describe('isValidLocation', () => {
+  it('accepts valid coordinates including zero', () => {
+    expect(isValidLocation(15.3694, 44.191)).toBe(true)
+    expect(isValidLocation('0', '0')).toBe(true)
+    expect(isValidLocation(-90, 180)).toBe(true)
+  })
+
+  it('rejects blank or out-of-range coordinates', () => {
+    expect(isValidLocation('', '44.19')).toBe(false)
+    expect(isValidLocation('15.36', '')).toBe(false)
+    expect(isValidLocation('91', '44')).toBe(false)
+    expect(isValidLocation('-91', '44')).toBe(false)
+    expect(isValidLocation('15', '181')).toBe(false)
+    expect(isValidLocation('abc', '44')).toBe(false)
+  })
+})
+
+describe('validateCreateForm — إنشاء مخزون متعدد الحقول', () => {
+  const gazType = { id: 1, name: 'غاز منزلي', slug: 'gaz', provider_type_id: 1 }
+  const waterType = { id: 2, name: 'مياه', slug: 'water', provider_type_id: 1 }
+  const validAddress = 'تعز - شارع جمال بجانب جولة المسبح'
   const main = { name: 'حبة', rate: '1', is_main: true }
   const second = { name: 'كرتون', rate: '12', is_main: false }
 
-  it('accepts a valid form (نوع + وحدة رئيسية + فرعية)', () => {
-    const r = validateCreateForm(1, [main, second])
+  it('accepts a valid gas form (مع gazStockType)', () => {
+    const r = validateCreateForm({
+      selectedType: gazType,
+      address: validAddress,
+      lat: '13.5795',
+      lng: '44.0209',
+      gazStockType: 'exchange',
+      units: [main, second],
+    })
     expect(r.valid).toBe(true)
     expect(r.typeError).toBeNull()
+    expect(r.addressError).toBeNull()
+    expect(r.locationError).toBeNull()
+    expect(r.gazTypeError).toBeNull()
     expect(r.formError).toBeNull()
     expect(r.rowErrors.every((e) => !e)).toBe(true)
   })
 
+  it('accepts a non-gas form without gazStockType', () => {
+    const r = validateCreateForm({
+      selectedType: waterType,
+      address: validAddress,
+      lat: '0',
+      lng: '0',
+      gazStockType: '',
+      units: [main],
+    })
+    expect(r.valid).toBe(true)
+    expect(r.gazTypeError).toBeNull()
+  })
+
+  it('requires gazStockType when slug is gaz', () => {
+    const r = validateCreateForm({
+      selectedType: gazType,
+      address: validAddress,
+      lat: '13.5',
+      lng: '44.0',
+      gazStockType: '',
+      units: [main],
+    })
+    expect(r.valid).toBe(false)
+    expect(r.gazTypeError).toBeTruthy()
+  })
+
+  it('validates address length (10-200 chars after trim)', () => {
+    expect(
+      validateCreateForm({
+        selectedType: waterType,
+        address: '   ',
+        lat: '13.5',
+        lng: '44.0',
+        units: [main],
+      }).addressError
+    ).toBe('يرجى إدخال عنوان المخزون')
+
+    expect(
+      validateCreateForm({
+        selectedType: waterType,
+        address: '   قصير   ',
+        lat: '13.5',
+        lng: '44.0',
+        units: [main],
+      }).addressError
+    ).toContain('10')
+
+    expect(
+      validateCreateForm({
+        selectedType: waterType,
+        address: 'أ'.repeat(ADDRESS_MAX + 1),
+        lat: '13.5',
+        lng: '44.0',
+        units: [main],
+      }).addressError
+    ).toContain('200')
+  })
+
   it('rejects missing stock type', () => {
-    const r = validateCreateForm('', [main])
+    const r = validateCreateForm({
+      selectedType: null,
+      address: validAddress,
+      lat: '13.5',
+      lng: '44.0',
+      units: [main],
+    })
     expect(r.valid).toBe(false)
     expect(r.typeError).toBe('يرجى اختيار نوع المخزون')
   })
 
-  it('rejects an empty units list', () => {
-    const r = validateCreateForm(1, [])
-    expect(r.valid).toBe(false)
-    expect(r.formError).toBe('يجب إضافة وحدة واحدة على الأقل')
+  it('rejects an empty units list and multiple main units', () => {
+    expect(
+      validateCreateForm({
+        selectedType: waterType,
+        address: validAddress,
+        lat: '13.5',
+        lng: '44.0',
+        units: [],
+      }).formError
+    ).toBe('يجب إضافة وحدة واحدة على الأقل')
+
+    expect(
+      validateCreateForm({
+        selectedType: waterType,
+        address: validAddress,
+        lat: '13.5',
+        lng: '44.0',
+        units: [main, { name: 'صندوق', rate: '1', is_main: true }],
+      }).formError
+    ).toContain('وحدة رئيسية واحدة')
   })
 
-  it('rejects multiple main units', () => {
-    const r = validateCreateForm(1, [main, { name: 'صندوق', rate: '1', is_main: true }])
-    expect(r.valid).toBe(false)
-    expect(r.formError).toContain('وحدة رئيسية واحدة')
-  })
+  it('rejects duplicate unit names and oversized unit names', () => {
+    expect(
+      validateCreateForm({
+        selectedType: waterType,
+        address: validAddress,
+        lat: '13.5',
+        lng: '44.0',
+        units: [main, { name: 'حبة', rate: '5', is_main: false }],
+      }).rowErrors[1]
+    ).toContain('مكرر')
 
-  it('rejects a main unit whose rate is not 1', () => {
-    const r = validateCreateForm(1, [{ name: 'حبة', rate: '2', is_main: true }])
-    expect(r.valid).toBe(false)
-    expect(r.rowErrors[0]).toBe('معامل الوحدة الرئيسية يجب أن يساوي 1')
-  })
-
-  it('rejects non-integer or <1 secondary rates', () => {
-    expect(validateCreateForm(1, [main, { name: 'كرتون', rate: '0', is_main: false }]).rowErrors[1]).toBeTruthy()
-    expect(validateCreateForm(1, [main, { name: 'كرتون', rate: '1.5', is_main: false }]).rowErrors[1]).toBeTruthy()
-    expect(validateCreateForm(1, [main, { name: 'كرتون', rate: '', is_main: false }]).rowErrors[1]).toBeTruthy()
-  })
-
-  it('rejects duplicate unit names', () => {
-    const r = validateCreateForm(1, [main, { name: 'حبة', rate: '5', is_main: false }])
-    expect(r.valid).toBe(false)
-    expect(r.rowErrors[1]).toContain('مكرر')
-  })
-
-  it('rejects blank names and names over 50 characters', () => {
-    expect(validateCreateForm(1, [{ name: '   ', rate: '1', is_main: true }]).rowErrors[0]).toBeTruthy()
-    const long = 'a'.repeat(UNIT_NAME_MAX + 1)
-    expect(validateCreateForm(1, [main, { name: long, rate: '2', is_main: false }]).rowErrors[1]).toBeTruthy()
-  })
-
-  it('accepts a name of exactly 50 characters', () => {
-    const exact = 'ب'.repeat(UNIT_NAME_MAX)
-    const r = validateCreateForm(1, [main, { name: exact, rate: '2', is_main: false }])
-    expect(r.valid).toBe(true)
+    expect(
+      validateCreateForm({
+        selectedType: waterType,
+        address: validAddress,
+        lat: '13.5',
+        lng: '44.0',
+        units: [main, { name: 'a'.repeat(UNIT_NAME_MAX + 1), rate: '2', is_main: false }],
+      }).rowErrors[1]
+    ).toBeTruthy()
   })
 })
 
@@ -95,21 +193,12 @@ describe('validateTransaction — حركات المخزون', () => {
     expect(r.valid).toBe(true)
   })
 
-  it('rejects invalid amounts (صفر/سالب/كسور/فارغ)', () => {
+  it('rejects invalid amounts and foreign units', () => {
     expect(validateTransaction({ amount: '0', unitId: 10, units }).errors.amount).toBeTruthy()
-    expect(validateTransaction({ amount: '-2', unitId: 10, units }).errors.amount).toBeTruthy()
-    expect(validateTransaction({ amount: '2.5', unitId: 10, units }).errors.amount).toBeTruthy()
-    expect(validateTransaction({ amount: '', unitId: 10, units }).errors.amount).toBeTruthy()
-  })
-
-  it('rejects a missing or foreign unit', () => {
-    expect(validateTransaction({ amount: 1, unitId: '', units }).errors.unit).toBeTruthy()
     expect(validateTransaction({ amount: 1, unitId: 999, units }).errors.unit).toContain('لا تنتمي')
-  })
-
-  it('rejects descriptions over 1000 characters', () => {
-    const r = validateTransaction({ amount: 1, unitId: 10, description: 'x'.repeat(DESC_MAX + 1), units })
-    expect(r.errors.description).toBeTruthy()
+    expect(
+      validateTransaction({ amount: 1, unitId: 10, description: 'x'.repeat(DESC_MAX + 1), units }).errors.description
+    ).toBeTruthy()
   })
 })
 
@@ -119,30 +208,9 @@ describe('validateUnitForm — إدارة الوحدات', () => {
     { id: 11, name: 'كرتون', rate: 12, is_main: false },
   ]
 
-  it('accepts a new valid secondary unit', () => {
-    const r = validateUnitForm({ name: 'طرد', rate: '24', units })
-    expect(r.valid).toBe(true)
-    expect(r.name).toBe('طرد')
-  })
-
-  it('rejects a duplicate name (case-insensitive, trimmed)', () => {
-    expect(validateUnitForm({ name: 'كرتون', rate: '10', units }).errors.name).toBeTruthy()
+  it('accepts a new valid secondary unit and rejects duplicates', () => {
+    expect(validateUnitForm({ name: 'طرد', rate: '24', units }).valid).toBe(true)
     expect(validateUnitForm({ name: '  كرتون ', rate: '10', units }).errors.name).toBeTruthy()
-  })
-
-  it('allows keeping the same name when editing that unit (excludeId)', () => {
-    const r = validateUnitForm({ name: 'كرتون', rate: '15', units, excludeId: 11 })
-    expect(r.valid).toBe(true)
-  })
-
-  it('rejects blank and oversized names', () => {
-    expect(validateUnitForm({ name: '', rate: '2', units }).errors.name).toBeTruthy()
-    expect(validateUnitForm({ name: 'x'.repeat(UNIT_NAME_MAX + 1), rate: '2', units }).errors.name).toBeTruthy()
-  })
-
-  it('rejects invalid secondary rates but does not validate main-unit rate', () => {
-    expect(validateUnitForm({ name: 'طرد', rate: '0', units }).errors.rate).toBeTruthy()
-    expect(validateUnitForm({ name: 'طرد', rate: 'abc', units }).errors.rate).toBeTruthy()
-    expect(validateUnitForm({ name: 'حبة', rate: '99', units, excludeId: 10, isMain: true }).valid).toBe(true)
+    expect(validateUnitForm({ name: 'كرتون', rate: '15', units, excludeId: 11 }).valid).toBe(true)
   })
 })

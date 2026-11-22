@@ -12,7 +12,7 @@ afterEach(() => {
 
 function stubUnits(unitHandler) {
   return stubApi(({ url, method, body }) => {
-    if (url.includes('/user/me/stock')) return ok(STOCK)
+    if (method === 'GET' && url.endsWith(`/api/v1/stocks/${STOCK.id}`)) return ok(STOCK)
     if (method === 'POST' && url.includes('/units')) return unitHandler({ method, url, body })
     if (method === 'PATCH' && url.includes('/units/')) return unitHandler({ method, url, body })
     return ok({})
@@ -23,7 +23,7 @@ describe('StockUnitsPage — عرض الوحدات', () => {
   it('يعرض الوحدات الرئيسية والفرعية مع المعاملات', async () => {
     stubUnits(() => ok({ id: 12 }))
 
-    renderWithAuth(<StockUnitsPage go={vi.fn()} showToast={vi.fn()} />)
+    renderWithAuth(<StockUnitsPage go={vi.fn()} showToast={vi.fn()} stockId={STOCK.id} />)
 
     expect(await screen.findByText('حبة')).toBeTruthy()
     expect(screen.getByText('كرتون')).toBeTruthy()
@@ -41,7 +41,7 @@ describe('StockUnitsPage — إضافة وحدة فرعية', () => {
     const { calls } = stubUnits(() => ok({ id: 12 }))
     const showToast = vi.fn()
 
-    renderWithAuth(<StockUnitsPage go={vi.fn()} showToast={showToast} />)
+    renderWithAuth(<StockUnitsPage go={vi.fn()} showToast={showToast} stockId={STOCK.id} />)
 
     await screen.findByText('إضافة وحدة فرعية جديدة')
     fireEvent.change(screen.getByPlaceholderText('مثال: طرد'), { target: { value: 'طرد' } })
@@ -54,14 +54,16 @@ describe('StockUnitsPage — إضافة وحدة فرعية', () => {
     expect(post.body).toEqual({ name: 'طرد', rate: 24, is_main: false })
 
     // تحديث المخزون بعد النجاح
-    await waitFor(() => expect(calls.filter((c) => c.url.includes('/user/me/stock')).length).toBe(2))
+    await waitFor(() =>
+      expect(calls.filter((c) => c.method === 'GET' && c.url.endsWith(`/api/v1/stocks/${STOCK.id}`)).length).toBe(2)
+    )
     expect(showToast).toHaveBeenCalledWith('تمت إضافة الوحدة بنجاح')
   })
 
   it('يعرض خطأ تكرار الاسم 1609 من الخادم', async () => {
     stubUnits(() => apiError(409, 1609, 'duplicate unit name'))
 
-    renderWithAuth(<StockUnitsPage go={vi.fn()} showToast={vi.fn()} />)
+    renderWithAuth(<StockUnitsPage go={vi.fn()} showToast={vi.fn()} stockId={STOCK.id} />)
 
     await screen.findByText('إضافة وحدة فرعية جديدة')
     fireEvent.change(screen.getByPlaceholderText('مثال: طرد'), { target: { value: 'طرد' } })
@@ -74,7 +76,7 @@ describe('StockUnitsPage — إضافة وحدة فرعية', () => {
   it('يرفض الاسم المكرر محلياً دون إرسال', async () => {
     const { calls } = stubUnits(() => ok({ id: 12 }))
 
-    renderWithAuth(<StockUnitsPage go={vi.fn()} showToast={vi.fn()} />)
+    renderWithAuth(<StockUnitsPage go={vi.fn()} showToast={vi.fn()} stockId={STOCK.id} />)
 
     await screen.findByText('إضافة وحدة فرعية جديدة')
     fireEvent.change(screen.getByPlaceholderText('مثال: طرد'), { target: { value: 'حبة' } })
@@ -90,7 +92,7 @@ describe('StockUnitsPage — تعديل الوحدات', () => {
   it('يمنع تعديل معامل الوحدة الرئيسية (حقل معطّل بقيمة 1)', async () => {
     stubUnits(() => ok({ id: 10 }))
 
-    renderWithAuth(<StockUnitsPage go={vi.fn()} showToast={vi.fn()} />)
+    renderWithAuth(<StockUnitsPage go={vi.fn()} showToast={vi.fn()} stockId={STOCK.id} />)
 
     await screen.findByText('حبة')
     const editBtns = screen.getAllByText('تعديل')
@@ -106,7 +108,7 @@ describe('StockUnitsPage — تعديل الوحدات', () => {
     const { calls } = stubUnits(() => ok({ id: 11 }))
     const showToast = vi.fn()
 
-    renderWithAuth(<StockUnitsPage go={vi.fn()} showToast={showToast} />)
+    renderWithAuth(<StockUnitsPage go={vi.fn()} showToast={showToast} stockId={STOCK.id} />)
 
     await screen.findByText('كرتون')
     const editBtns = screen.getAllByText('تعديل')
@@ -123,7 +125,9 @@ describe('StockUnitsPage — تعديل الوحدات', () => {
     expect(patch.body).toEqual({ name: 'كرتون كبير', rate: 15 })
 
     await waitFor(() => expect(showToast).toHaveBeenCalledWith('تم حفظ التعديلات'))
-    await waitFor(() => expect(calls.filter((c) => c.url.includes('/user/me/stock')).length).toBe(2))
+    await waitFor(() =>
+      expect(calls.filter((c) => c.method === 'GET' && c.url.endsWith(`/api/v1/stocks/${STOCK.id}`)).length).toBe(2)
+    )
   })
 
   it('عند 1610 (وحدة مستخدمة) يسمح بتعديل الاسم فقط تلقائياً', async () => {
@@ -141,7 +145,7 @@ describe('StockUnitsPage — تعديل الوحدات', () => {
     })
     const showToast = vi.fn()
 
-    renderWithAuth(<StockUnitsPage go={vi.fn()} showToast={showToast} />)
+    renderWithAuth(<StockUnitsPage go={vi.fn()} showToast={showToast} stockId={STOCK.id} />)
 
     await screen.findByText('كرتون')
     fireEvent.click(screen.getAllByText('تعديل')[1])
@@ -158,7 +162,7 @@ describe('StockUnitsPage — تعديل الوحدات', () => {
   it('عند 1610 بدون تغيير الاسم يعرض رسالة الخطأ', async () => {
     stubUnits(() => apiError(409, 1610, 'unit has transactions'))
 
-    renderWithAuth(<StockUnitsPage go={vi.fn()} showToast={vi.fn()} />)
+    renderWithAuth(<StockUnitsPage go={vi.fn()} showToast={vi.fn()} stockId={STOCK.id} />)
 
     await screen.findByText('كرتون')
     fireEvent.click(screen.getAllByText('تعديل')[1])

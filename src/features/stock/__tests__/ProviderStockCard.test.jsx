@@ -1,61 +1,62 @@
 // @vitest-environment jsdom
-// ═══════════ اختبارات بطاقة اكتشاف المخزون في لوحة التحكم ═══════════
+// ═══════════ اختبارات قائمة مخازن المزود في لوحة التحكم (Multi-Stock) ═══════════
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { screen, fireEvent, waitFor } from '@testing-library/react'
 import ProviderStockCard from '../components/ProviderStockCard'
 import { ROUTES } from '../../../shared/constants/routes'
-import { STOCK, ok, apiError, stubApi, renderWithAuth } from './helpers'
+import { STOCK, STOCK_WATER, ok, json, apiError, stubApi, renderWithAuth } from './helpers'
 
 afterEach(() => {
   vi.unstubAllGlobals()
   vi.clearAllMocks()
 })
 
-describe('ProviderStockCard — حالات اكتشاف المخزون', () => {
-  it('يعرض حالة تحميل ثم «لا يوجد مخزون مسجل» عند 404/1600 مع إجراء الإنشاء', async () => {
+describe('ProviderStockCard — تعدد المخازن', () => {
+  it('يعرض حالة تحميل ثم «لا يوجد مخزون مسجل» عند مصفوفة فارغة أو غياب data', async () => {
     stubApi(({ url }) => {
-      if (url.includes('/user/me/stock')) return apiError(404, 1600, 'stock not found')
+      if (url.endsWith('/api/v1/stocks')) return json({ success: true })
       return ok({})
     })
     const go = vi.fn()
 
     renderWithAuth(<ProviderStockCard go={go} />)
 
-    expect(screen.getByText(/جارٍ فحص حالة المخزون/)).toBeTruthy()
+    expect(screen.getByText(/جارٍ تحميل قائمة المخازن/)).toBeTruthy()
     expect(await screen.findByText('لا يوجد مخزون مسجل')).toBeTruthy()
 
     fireEvent.click(screen.getByText('إضافة مخزون جديد'))
     expect(go).toHaveBeenCalledWith(ROUTES.STOCK_CREATE)
   })
 
-  it('يعرض ملخص المخزون عند 200 بدون زر إنشاء آخر', async () => {
+  it('يعرض بطاقات المخازن مع إبقاء زر «إضافة مخزون جديد» متاحاً دائماً', async () => {
     stubApi(({ url }) => {
-      if (url.includes('/user/me/stock')) return ok(STOCK)
+      if (url.endsWith('/api/v1/stocks')) return ok([STOCK, STOCK_WATER])
       return ok({})
     })
     const go = vi.fn()
 
     renderWithAuth(<ProviderStockCard go={go} />)
 
-    expect(await screen.findByText('المخزون الحالي')).toBeTruthy()
-    expect(screen.getByText('مواد غذائية')).toBeTruthy()
-    expect(screen.getAllByText('120').length).toBeGreaterThan(0) // available بالوحدة الرئيسية
-    expect(screen.getByText('كرتون')).toBeTruthy() // من balances
-    expect(screen.getByText('إدارة المخزون')).toBeTruthy()
-    expect(screen.queryByText('إضافة مخزون جديد')).toBeNull() // لا زر إنشاء احتياطي
+    expect(await screen.findByText('المخازن المسجّلة (2)')).toBeTruthy()
+    expect(screen.getByText('غاز منزلي')).toBeTruthy()
+    expect(screen.getByText('استبدال أسطوانات')).toBeTruthy()
+    expect(screen.getByText(STOCK.address)).toBeTruthy()
+    expect(screen.getByText('مياه')).toBeTruthy()
+    expect(screen.getByText('إضافة مخزون جديد')).toBeTruthy()
 
-    fireEvent.click(screen.getByText('إدارة المخزون'))
-    expect(go).toHaveBeenCalledWith(ROUTES.STOCK_DASHBOARD)
+    const manageBtns = screen.getAllByText('إدارة المخزون')
+    expect(manageBtns).toHaveLength(2)
+    fireEvent.click(manageBtns[0])
+    expect(go).toHaveBeenCalledWith(ROUTES.STOCK_DASHBOARD, { stockId: STOCK.id })
   })
 
   it('يعرض خطأ مع إعادة محاولة (لا يعامل أخطاء الخادم كبيانات فارغة)', async () => {
     const { calls } = stubApi(({ url }) => {
-      if (url.includes('/user/me/stock')) return apiError(500, 5000, 'server error')
+      if (url.endsWith('/api/v1/stocks')) return apiError(500, 5000, 'server error')
       return ok({})
     })
-    const go = vi.fn()
 
-    renderWithAuth(<ProviderStockCard go={go} />)
+    renderWithAuth(<ProviderStockCard go={vi.fn()} />)
 
     expect(await screen.findByText('تعذر تحميل بيانات المخزون')).toBeTruthy()
     expect(screen.queryByText('لا يوجد مخزون مسجل')).toBeNull()
@@ -64,9 +65,9 @@ describe('ProviderStockCard — حالات اكتشاف المخزون', () => {
     await waitFor(() => expect(calls.length).toBe(2))
   })
 
-  it('يعرض حالة انتهاء الجلسة عند 401', async () => {
+  it('يعرض حالة انتهاء الجلسة عند 401 / 1106', async () => {
     stubApi(({ url }) => {
-      if (url.includes('/user/me/stock')) return apiError(401, 1100, 'unauthorized')
+      if (url.endsWith('/api/v1/stocks')) return apiError(401, 1106, 'unauthorized')
       return ok({})
     })
 

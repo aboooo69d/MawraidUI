@@ -29,7 +29,7 @@ const TX_OUT = {
 
 function stubHistory(listHandler) {
   return stubApi(({ url, method }) => {
-    if (url.includes('/user/me/stock')) return ok(STOCK)
+    if (method === 'GET' && url.endsWith(`/api/v1/stocks/${STOCK.id}`)) return ok(STOCK)
     if (url.includes('/transactions') && method === 'GET') return listHandler(url)
     return ok({})
   })
@@ -39,7 +39,7 @@ describe('StockHistoryPage — العرض والفلترة والترقيم', ()
   it('يعرض الحركات مع meta للترقيم', async () => {
     stubHistory(() => ok([TX_IN, TX_OUT], { page: 1, per_page: 20, total: 45, total_pages: 3 }))
 
-    renderWithAuth(<StockHistoryPage go={vi.fn()} />)
+    renderWithAuth(<StockHistoryPage go={vi.fn()} stockId={STOCK.id} />)
 
     expect(await screen.findByText('توريد 5 كراتين')).toBeTruthy()
     expect(screen.getByText('صرف لأسرة')).toBeTruthy()
@@ -54,7 +54,7 @@ describe('StockHistoryPage — العرض والفلترة والترقيم', ()
       url.includes('is_in=true') ? ok([TX_IN], { page: 1, per_page: 20, total: 1, total_pages: 1 }) : ok([TX_IN, TX_OUT], { page: 1, per_page: 20, total: 45, total_pages: 3 })
     )
 
-    renderWithAuth(<StockHistoryPage go={vi.fn()} />)
+    renderWithAuth(<StockHistoryPage go={vi.fn()} stockId={STOCK.id} />)
     await screen.findByText('صرف لأسرة')
 
     fireEvent.click(screen.getByText('الوارد فقط'))
@@ -74,7 +74,7 @@ describe('StockHistoryPage — العرض والفلترة والترقيم', ()
         : ok([TX_IN], { page: 1, per_page: 20, total: 45, total_pages: 3 })
     )
 
-    renderWithAuth(<StockHistoryPage go={vi.fn()} />)
+    renderWithAuth(<StockHistoryPage go={vi.fn()} stockId={STOCK.id} />)
     await screen.findByText('توريد 5 كراتين')
 
     fireEvent.click(screen.getByText('التالي'))
@@ -87,7 +87,7 @@ describe('StockHistoryPage — العرض والفلترة والترقيم', ()
   it('يعرض حالة فارغة عند عدم وجود حركات', async () => {
     stubHistory(() => ok([], { page: 1, per_page: 20, total: 0, total_pages: 0 }))
 
-    renderWithAuth(<StockHistoryPage go={vi.fn()} />)
+    renderWithAuth(<StockHistoryPage go={vi.fn()} stockId={STOCK.id} />)
 
     expect(await screen.findByText('لا توجد حركات مسجلة')).toBeTruthy()
     expect(screen.getByText(/ستظهر هنا حركات التوريد/)).toBeTruthy()
@@ -96,7 +96,7 @@ describe('StockHistoryPage — العرض والفلترة والترقيم', ()
   it('يعرض خطأ الخادم مع إعادة محاولة (لا نتائج وهمية)', async () => {
     stubHistory(() => apiError(500, 5000, 'server error'))
 
-    renderWithAuth(<StockHistoryPage go={vi.fn()} />)
+    renderWithAuth(<StockHistoryPage go={vi.fn()} stockId={STOCK.id} />)
 
     expect(await screen.findByText('تعذر تحميل بيانات المخزون')).toBeTruthy()
     expect(screen.queryByText('لا توجد حركات مسجلة')).toBeNull()
@@ -111,7 +111,7 @@ describe('StockHistoryPage — العرض والفلترة والترقيم', ()
       )
     })
 
-    renderWithAuth(<StockHistoryPage go={vi.fn()} />)
+    renderWithAuth(<StockHistoryPage go={vi.fn()} stockId={STOCK.id} />)
     await screen.findByText('الوارد فقط')
 
     fireEvent.click(screen.getByText('الوارد فقط'))

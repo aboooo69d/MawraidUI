@@ -13,7 +13,7 @@ afterEach(() => {
 
 function stubTx(postHandler) {
   return stubApi(({ url, method, body }) => {
-    if (url.includes('/user/me/stock')) return ok(STOCK)
+    if (method === 'GET' && url.endsWith(`/api/v1/stocks/${STOCK.id}`)) return ok(STOCK)
     if (method === 'POST' && url.includes('/transactions')) return postHandler(body)
     return ok({})
   })
@@ -30,7 +30,7 @@ describe('StockTransactionPage — حركة وارد', () => {
     const go = vi.fn()
     const showToast = vi.fn()
 
-    renderWithAuth(<StockTransactionPage go={go} showToast={showToast} direction="in" />)
+    renderWithAuth(<StockTransactionPage go={go} showToast={showToast} stockId={STOCK.id} direction="in" />)
 
     expect(await screen.findByText('إضافة كمية (وارد)')).toBeTruthy()
     fillForm()
@@ -41,13 +41,13 @@ describe('StockTransactionPage — حركة وارد', () => {
     expect(post.url).toBe(`/api/v1/stocks/${STOCK.id}/transactions`)
     expect(post.body).toEqual({ amount: 5, unit_id: 11, is_in: true })
 
-    await waitFor(() => expect(go).toHaveBeenCalledWith(ROUTES.STOCK_DASHBOARD))
+    await waitFor(() => expect(go).toHaveBeenCalledWith(ROUTES.STOCK_DASHBOARD, { stockId: STOCK.id }))
     expect(showToast).toHaveBeenCalledWith('تمت إضافة الكمية بنجاح')
   })
 
   it('يرفض كمية غير موجبة صحيحة محلياً', async () => {
     const { calls } = stubTx(() => ok({ id: 't1' }))
-    renderWithAuth(<StockTransactionPage go={vi.fn()} showToast={vi.fn()} direction="in" />)
+    renderWithAuth(<StockTransactionPage go={vi.fn()} showToast={vi.fn()} stockId={STOCK.id} direction="in" />)
 
     await screen.findByText('إضافة كمية (وارد)')
     fireEvent.change(screen.getByLabelText(/^الوحدة/), { target: { value: '11' } })
@@ -65,7 +65,7 @@ describe('StockTransactionPage — حركة وارد', () => {
           setTimeout(() => resolve(ok({ id: 't1' })), 50)
         )
     )
-    renderWithAuth(<StockTransactionPage go={vi.fn()} showToast={vi.fn()} direction="in" />)
+    renderWithAuth(<StockTransactionPage go={vi.fn()} showToast={vi.fn()} stockId={STOCK.id} direction="in" />)
 
     await screen.findByText('إضافة كمية (وارد)')
     fillForm()
@@ -83,7 +83,7 @@ describe('StockTransactionPage — حركة منصرف', () => {
     const { calls } = stubTx(() => ok({ id: 't2' }))
     const go = vi.fn()
 
-    renderWithAuth(<StockTransactionPage go={go} showToast={vi.fn()} direction="out" />)
+    renderWithAuth(<StockTransactionPage go={go} showToast={vi.fn()} stockId={STOCK.id} direction="out" />)
 
     expect(await screen.findByText('سحب كمية (منصرف)')).toBeTruthy()
     fillForm()
@@ -95,7 +95,7 @@ describe('StockTransactionPage — حركة منصرف', () => {
       unit_id: 11,
       is_in: false,
     })
-    await waitFor(() => expect(go).toHaveBeenCalledWith(ROUTES.STOCK_DASHBOARD))
+    await waitFor(() => expect(go).toHaveBeenCalledWith(ROUTES.STOCK_DASHBOARD, { stockId: STOCK.id }))
   })
 
   it('يعرض رسالة نفاد الرصيد 1602 دون نجاح وهمي', async () => {
@@ -103,7 +103,7 @@ describe('StockTransactionPage — حركة منصرف', () => {
     const go = vi.fn()
     const showToast = vi.fn()
 
-    renderWithAuth(<StockTransactionPage go={go} showToast={showToast} direction="out" />)
+    renderWithAuth(<StockTransactionPage go={go} showToast={showToast} stockId={STOCK.id} direction="out" />)
 
     await screen.findByText('سحب كمية (منصرف)')
     fillForm()
@@ -119,8 +119,8 @@ describe('StockTransactionPage — حركة منصرف', () => {
     stubTx(() => ok({}))
     const go = vi.fn()
 
-    renderWithAuth(<StockTransactionPage go={go} showToast={vi.fn()} direction="sideways" />)
+    renderWithAuth(<StockTransactionPage go={go} showToast={vi.fn()} stockId={STOCK.id} direction="sideways" />)
 
-    await waitFor(() => expect(go).toHaveBeenCalledWith(ROUTES.STOCK_DASHBOARD))
+    await waitFor(() => expect(go).toHaveBeenCalledWith(ROUTES.STOCK_DASHBOARD, { stockId: STOCK.id }))
   })
 })
