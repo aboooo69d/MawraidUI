@@ -4,11 +4,11 @@
 import { request } from '../client'
 
 export const stockApi = {
-  // المخزون الحالي للمستخدم (GET /api/v1/user/me/stock)
-  getMyStock: () => request('/user/me/stock'),
+  // قائمة مخازن المزود الحالي (GET /api/v1/stocks)
+  getMyStocks: async () => (await request('/stocks')) ?? [],
 
   // تصنيفات المخزون (GET /api/v1/stocks/types)
-  getStockTypes: () => request('/stocks/types'),
+  getStockTypes: async () => (await request('/stocks/types')) ?? [],
 
   // إنشاء مخزون جديد (POST /api/v1/stocks)
   createStock: (payload) => request('/stocks', { method: 'POST', body: payload }),
@@ -22,12 +22,16 @@ export const stockApi = {
 
   // سجل الحركات مع الترقيم (GET /api/v1/stocks/:stock_id/transactions?page&page_size&is_in)
   // يُرجع { data, meta } لأن الترقيم في meta.
-  getStockTransactions: (stockId, { page = 1, page_size = 20, is_in } = {}) => {
+  getStockTransactions: async (stockId, { page = 1, page_size = 20, is_in } = {}) => {
     const params = new URLSearchParams()
     params.set('page', String(page))
     params.set('page_size', String(page_size))
     if (is_in !== undefined && is_in !== null && is_in !== '') params.set('is_in', String(is_in))
-    return request(`/stocks/${stockId}/transactions?${params.toString()}`, { withMeta: true })
+    const res = await request(`/stocks/${stockId}/transactions?${params.toString()}`, { withMeta: true })
+    return {
+      data: Array.isArray(res?.data) ? res.data : [],
+      meta: res?.meta || null,
+    }
   },
 
   // إضافة وحدة فرعية (POST /api/v1/stocks/:stock_id/units)
