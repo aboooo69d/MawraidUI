@@ -7,6 +7,7 @@ export default defineConfig({
   test: {
     // تفعيل globals ليتعرّف @testing-library/react على afterEach ويشغّل cleanup التلقائي
     globals: true,
+    exclude: ['e2e/**', '**/node_modules/**', '**/dist/**'],
   },
   server: {
     host: '0.0.0.0',

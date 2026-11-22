@@ -6,6 +6,8 @@ import StockCreatePage from '../pages/StockCreatePage'
 import { ROUTES } from '../../../shared/constants/routes'
 import { STOCK_TYPES, ok, stubApi, renderWithAuth } from './helpers'
 
+vi.mock('../components/StationLocationMap', async () => ({ default: (await import('./LocationMapStub')).default }))
+
 afterEach(() => {
   vi.unstubAllGlobals()
   vi.clearAllMocks()
@@ -19,14 +21,14 @@ function stubTypes() {
   })
 }
 
-const fillCommonFields = async (typeId = '1') => {
+const fillCommonFields = async (typeId = '1', confirm = true) => {
   await screen.findByText('مياه')
   fireEvent.change(screen.getByLabelText(/نوع المخزون/), { target: { value: typeId } })
   fireEvent.change(screen.getByLabelText(/عنوان المخزون/), {
     target: { value: 'تعز - شارع جمال بجانب جولة المسبح' },
   })
-  fireEvent.change(screen.getByLabelText(/خط العرض/), { target: { value: '13.5795' } })
-  fireEvent.change(screen.getByLabelText(/خط الطول/), { target: { value: '44.0209' } })
+  fireEvent.click(screen.getByText('select station A'))
+  if (confirm) fireEvent.click(screen.getByText('تأكيد موقع المحطة'))
   fireEvent.change(screen.getByPlaceholderText('مثال: حبة'), { target: { value: 'اسطوانة' } })
   fireEvent.click(screen.getByText('إضافة وحدة فرعية'))
   fireEvent.change(screen.getByPlaceholderText('مثال: كرتون'), { target: { value: 'شبك' } })
@@ -116,5 +118,56 @@ describe('StockCreatePage — التحقق والإنشاء', () => {
     expect(await screen.findByText(/العنوان يجب أن يكون بين 10 و200 حرف/)).toBeTruthy()
     expect(screen.getByText(/يرجى تحديد إحداثيات الموقع بشكل صحيح/)).toBeTruthy()
     expect(calls.filter((c) => c.method === 'POST').length).toBe(0)
+  })
+
+  it('blocks saving an unconfirmed selection and persists only the confirmed map correction', async () => {
+    const { calls } = stubTypes()
+    renderWithAuth(<StockCreatePage go={vi.fn()} showToast={vi.fn()} />)
+    await fillCommonFields('2', false)
+    fireEvent.click(screen.getByText('إنشاء المخزون'))
+    expect(screen.getByText(/يرجى تأكيد موقع المحطة على الخريطة/)).toBeTruthy()
+    expect(calls.filter((c) => c.method === 'POST')).toHaveLength(0)
+
+    fireEvent.click(screen.getByText('تأكيد موقع المحطة'))
+    fireEvent.click(screen.getByText('drag to station B'))
+    fireEvent.click(screen.getByText('إنشاء المخزون'))
+    expect(calls.filter((c) => c.method === 'POST')).toHaveLength(0)
+    fireEvent.click(screen.getByText('تأكيد تغيير موقع المحطة'))
+    fireEvent.click(screen.getByText('إنشاء المخزون'))
+    await waitFor(() => expect(calls.filter((c) => c.method === 'POST')).toHaveLength(1))
+    expect(calls.find((c) => c.method === 'POST').body.location).toEqual({ lat: 15.369457, lng: 44.191012 })
+  })
+
+  it('cancels an unconfirmed change and saves the previously accepted coordinates', async () => {
+    const { calls } = stubTypes()
+    renderWithAuth(<StockCreatePage go={vi.fn()} showToast={vi.fn()} />)
+    await fillCommonFields('2')
+    fireEvent.click(screen.getByText('drag to station B'))
+    fireEvent.click(screen.getByText('إلغاء التغيير'))
+    fireEvent.click(screen.getByText('إنشاء المخزون'))
+    await waitFor(() => expect(calls.filter((c) => c.method === 'POST')).toHaveLength(1))
+    expect(calls.find((c) => c.method === 'POST').body.location).toEqual({ lat: 13.5795, lng: 44.0209 })
+  })
+
+  it('preserves coordinates after an API error and allows retry without selecting again', async () => {
+    const { apiError } = await import('./helpers')
+    let attempts = 0
+    const { calls } = stubApi(({ url, method }) => {
+      if (url.includes('/stocks/types')) return ok(STOCK_TYPES)
+      if (method === 'POST') return ++attempts === 1 ? apiError(500, 9999, 'save failed') : ok({ id: 'retry-stock' })
+      return ok({})
+    })
+    const go = vi.fn()
+    renderWithAuth(<StockCreatePage go={go} showToast={vi.fn()} />)
+    await fillCommonFields('2')
+    fireEvent.click(screen.getByText('إنشاء المخزون'))
+    await screen.findByText('save failed')
+    expect(go).not.toHaveBeenCalled()
+    expect(screen.getByLabelText(/خط العرض/).value).toBe('13.5795')
+    fireEvent.click(screen.getByText('إنشاء المخزون'))
+    await waitFor(() => expect(go).toHaveBeenCalledWith(ROUTES.STOCK_DASHBOARD, { stockId: 'retry-stock' }))
+    expect(calls.filter((c) => c.method === 'POST').map((c) => c.body.location)).toEqual([
+      { lat: 13.5795, lng: 44.0209 }, { lat: 13.5795, lng: 44.0209 },
+    ])
   })
 })

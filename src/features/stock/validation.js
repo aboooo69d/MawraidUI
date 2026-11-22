@@ -36,6 +36,7 @@ export function validateCreateForm({
   address = '',
   lat = '',
   lng = '',
+  locationPending = false,
   gazStockType = '',
   units = [],
 } = {}) {
@@ -58,7 +59,9 @@ export function validateCreateForm({
     addressError = `العنوان يجب أن يكون بين ${ADDRESS_MIN} و${ADDRESS_MAX} حرف`
   }
 
-  if (!isValidLocation(lat, lng)) {
+  if (locationPending) {
+    locationError = 'يرجى تأكيد موقع المحطة على الخريطة أو إلغاء التغيير قبل الحفظ'
+  } else if (!isValidLocation(lat, lng)) {
     locationError = 'يرجى تحديد إحداثيات الموقع بشكل صحيح (خط العرض -90 إلى 90، خط الطول -180 إلى 180)'
   }
 
