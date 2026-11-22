@@ -1,8 +1,8 @@
 // ═══════════ شاشتا التسجيل: عميل (multipart) + مقدم خدمة (JSON) ═══════════
-import { useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { authApi } from '../../../services/api'
 import { PHONE_RE } from '../../../shared/constants/regex'
-import { Icons, BrandLogo, BackBtn, ErrorBanner, Label, PhoneInput, TextInput, PrimaryBtn } from '../../../shared/components/ui'
+import { Icons, BrandLogo, BackBtn, ErrorBanner, InfoBanner, Label, PhoneInput, TextInput, PrimaryBtn, SecondaryBtn } from '../../../shared/components/ui'
 import TurnstileWidget from '../components/TurnstileWidget'
 
 function CategoryCard({ selected, onToggle, icon: Icon, title, description, children }) {
@@ -264,6 +264,8 @@ export function RegisterProvider({ go }) {
   const [phone, setPhone] = useState('')
   const [pass, setPass] = useState('')
   const [name, setName] = useState('')
+  const [providerTypeId, setProviderTypeId] = useState('')
+  const [providerTypes, setProviderTypes] = useState({ status: 'loading', list: [], err: null })
   const [desc, setDesc] = useState('')
   const [startAt, setStartAt] = useState('08:00')
   const [endAt, setEndAt] = useState('18:00')
@@ -271,13 +273,42 @@ export function RegisterProvider({ go }) {
   const [loading, setLoading] = useState(false)
   const [turnstileToken, setTurnstileToken] = useState(null)
   const turnstileRef = useRef(null)
+  const typesSeq = useRef(0)
+  const mountedRef = useRef(true)
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
+
+  const loadProviderTypes = useCallback(async () => {
+    const seq = ++typesSeq.current
+    setProviderTypes({ status: 'loading', list: [], err: null })
+    try {
+      const list = await authApi.getProviderTypes()
+      if (!mountedRef.current || seq !== typesSeq.current) return
+      setProviderTypes({ status: 'ready', list: Array.isArray(list) ? list : [], err: null })
+    } catch (e) {
+      if (!mountedRef.current || seq !== typesSeq.current) return
+      setProviderTypes({ status: 'error', list: [], err: e })
+    }
+  }, [])
+
+  useEffect(() => {
+    loadProviderTypes()
+  }, [loadProviderTypes])
 
   async function submit(e) {
     if (e) e.preventDefault()
     setErr(null)
     if (!PHONE_RE.test(phone)) return setErr({ code: 2000, message: 'رقم الجوال غير صالح (9 أرقام تبدأ بـ 7)' })
     if (pass.length < 8) return setErr({ code: 2000, message: 'كلمة المرور يجب أن لا تقل عن 8 أحرف' })
-    if (name.trim().length < 10) return setErr({ code: 2000, message: 'اسم النشاط أو المركز يجب أن يكون بين 10 و50 حرفاً' })
+    if (!providerTypeId || Number(providerTypeId) <= 0) return setErr({ code: 2000, message: 'يرجى اختيار نوع مزود الخدمة' })
+    const trimmedName = name.trim()
+    if (trimmedName.length < 10 || trimmedName.length > 50) return setErr({ code: 2000, message: 'اسم النشاط أو المركز يجب أن يكون بين 10 و50 حرفاً' })
+    if (!startAt || !endAt || endAt <= startAt) return setErr({ code: 2000, message: 'وقت الإغلاق يجب أن يكون بعد وقت البدء' })
     if (!turnstileToken) return setErr({ code: 2000, message: 'يرجى إكمال التحقق الأمني أولاً' })
 
     setLoading(true)
@@ -285,14 +316,19 @@ export function RegisterProvider({ go }) {
       await authApi.registerProvider({
         phone,
         password: pass,
-        name: name.trim(),
+        name: trimmedName,
         description: desc.trim(),
         start_at: `2026-01-01T${startAt}:00Z`,
         end_at: `2026-01-01T${endAt}:00Z`,
+        provider_type_id: Number(providerTypeId),
       }, turnstileToken)
       go('otp', { phone })
     } catch (e) {
       setErr(e)
+      if (e?.code === 1003) {
+        setProviderTypeId('')
+        loadProviderTypes()
+      }
       setTurnstileToken(null)
       turnstileRef.current?.reset()
     } finally {
@@ -332,6 +368,44 @@ export function RegisterProvider({ go }) {
             <div>
               <Label req htmlFor="pPass">كلمة المرور</Label>
               <TextInput id="pPass" type="password" placeholder="8 أحرف أو أرقام على الأقل" value={pass} onChange={setPass} />
+            </div>
+
+            <div>
+              <Label req htmlFor="providerType">نوع مزود الخدمة</Label>
+              <select
+                id="providerType"
+                value={providerTypeId}
+                onChange={(e) => setProviderTypeId(e.target.value)}
+                disabled={providerTypes.status !== 'ready'}
+                className="w-full min-h-[48px] rounded-xl border border-slate-200 bg-white px-3.5 text-slate-800 text-sm font-semibold outline-none transition shadow-sm hover:border-slate-300 focus:border-mawarid-600 focus:ring-2 focus:ring-mawarid-600/20 disabled:opacity-60 disabled:cursor-wait"
+              >
+                <option value="">
+                  {providerTypes.status === 'loading' ? 'جارٍ تحميل أنواع مزودي الخدمة…' : 'اختر نوع مزود الخدمة'}
+                </option>
+                {providerTypes.list.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+
+              {providerTypes.status === 'error' && (
+                <div className="mt-2.5">
+                  <ErrorBanner err={providerTypes.err} />
+                  <SecondaryBtn onClick={loadProviderTypes} className="w-full">
+                    إعادة تحميل أنواع مزودي الخدمة
+                  </SecondaryBtn>
+                </div>
+              )}
+
+              {providerTypes.status === 'ready' && providerTypes.list.length === 0 && (
+                <div className="mt-2.5">
+                  <InfoBanner>لا توجد أنواع مزودي خدمة متاحة حالياً — أعد المحاولة لاحقاً.</InfoBanner>
+                  <SecondaryBtn onClick={loadProviderTypes} className="w-full">
+                    إعادة المحاولة
+                  </SecondaryBtn>
+                </div>
+              )}
             </div>
 
             <div>

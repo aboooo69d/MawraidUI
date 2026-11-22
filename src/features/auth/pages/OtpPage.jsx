@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { authApi } from '../../../services/api'
 import { Icons, BrandLogo, BackBtn, ErrorBanner, InfoBanner, PrimaryBtn } from '../../../shared/components/ui'
+import TurnstileWidget from '../components/TurnstileWidget'
 
 export default function Otp({ go, phone }) {
   const [digits, setDigits] = useState(['', '', '', '', '', ''])
@@ -9,7 +10,9 @@ export default function Otp({ go, phone }) {
   const [info, setInfo] = useState(`تم إرسال رمز التحقق المكون من 6 أرقام إلى الرقم +967 ${phone || ''}`)
   const [loading, setLoading] = useState(false)
   const [countdown, setCountdown] = useState(60)
+  const [turnstileToken, setTurnstileToken] = useState(null)
   const inputs = useRef([])
+  const turnstileRef = useRef(null)
 
   useEffect(() => {
     if (countdown <= 0) return
@@ -38,26 +41,33 @@ export default function Otp({ go, phone }) {
     setErr(null)
     const code = digits.join('')
     if (code.length !== 6) return setErr({ code: 2000, message: 'يرجى إدخال رمز التحقق كاملاً (6 أرقام)' })
+    if (!turnstileToken) return setErr({ code: 2000, message: 'يرجى إكمال التحقق الأمني أولاً' })
     setLoading(true)
     try {
-      await authApi.verifyPhone(phone, code)
+      await authApi.verifyPhone(phone, code, turnstileToken)
       go('login')
     } catch (e) {
       setErr(e)
     } finally {
+      setTurnstileToken(null)
+      turnstileRef.current?.reset()
       setLoading(false)
     }
   }
 
   async function resend() {
     setErr(null)
+    if (!turnstileToken) return setErr({ code: 2000, message: 'يرجى إكمال التحقق الأمني أولاً' })
     try {
-      await authApi.resendOtp(phone)
+      await authApi.resendOtp(phone, turnstileToken)
       setInfo('تم إرسال رمز تحقق جديد بنجاح إلى هاتفك')
       setCountdown(60)
     } catch (e) {
       setErr(e)
       setCountdown(60)
+    } finally {
+      setTurnstileToken(null)
+      turnstileRef.current?.reset()
     }
   }
 
@@ -105,7 +115,15 @@ export default function Otp({ go, phone }) {
               </div>
             </div>
 
-            <PrimaryBtn type="submit" loading={loading}>
+            <TurnstileWidget
+              ref={turnstileRef}
+              action="verify_phone"
+              onVerify={setTurnstileToken}
+              onExpire={() => setTurnstileToken(null)}
+              onError={() => setTurnstileToken(null)}
+            />
+
+            <PrimaryBtn type="submit" loading={loading} disabled={!turnstileToken || loading}>
               تأكيد وتفعيل الحساب
             </PrimaryBtn>
           </form>

@@ -60,7 +60,7 @@ function loadTurnstileScript() {
  */
 export const TurnstileWidget = forwardRef(function TurnstileWidget(
   {
-    siteKey = '0x4AAAAAAF2Kt4h0LfrUDRko',
+    siteKey = '1x00000000000000000000AA',
     action,
     onVerify,
     onExpire,
