@@ -1,10 +1,24 @@
 // ═══════════ أدوات مساعدة لميزة المخزون ═══════════
 
-// انتهاء الجلسة: 401 Unauthorized أو كود التطبيق 1100
-export const isSessionExpired = (err) => err?.status === 401 || err?.code === 1100
+// انتهاء الجلسة: 401 Unauthorized أو كود التطبيق 1106
+export const isSessionExpired = (err) => err?.status === 401 || err?.code === 1106
 
 // غياب المخزون: كود 1600، أو 404 بدون كود تطبيق (رد غير مغلّف) — لا نعامل أي 404 كغياب مخزون
 export const isStockMissing = (err) => err?.code === 1600 || (err?.status === 404 && err?.code == null)
+
+// التحقق من نوع مخزون الغاز (gaz)
+export const isGazStockType = (slug) =>
+  typeof slug === 'string' && slug.trim().toLowerCase() === 'gaz'
+
+export const GAZ_STOCK_TYPE_LABELS = {
+  exchange: 'استبدال أسطوانات',
+  refill: 'تعبئة فورية',
+}
+
+export function formatGazStockType(val) {
+  if (!val) return null
+  return GAZ_STOCK_TYPE_LABELS[String(val).trim().toLowerCase()] || String(val)
+}
 
 // تنسيق تاريخ/وقت عربي بأرقام لاتينية (مع رجوع آمن للنص الأصلي)
 export function formatDateTime(iso) {

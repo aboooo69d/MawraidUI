@@ -1,9 +1,14 @@
 // ═══════════ قواعد التحقق في واجهة المخزون (Client-side Validation) ═══════════
-// قواعد API_STOCK_DOCS.md: وحدة رئيسية واحدة rate=1، وحدات فرعية rate صحيح ≥1،
-// أسماء فريدة بحد أقصى 50 حرفاً، كمية موجبة صحيحة، وصف ≤1000 حرف.
+// قواعد تعدد المخازن: عنوان (10-200 حرف)، إحداثيات (-90..90 / -180..180)،
+// تفاصيل الغاز (exchange / refill) عند slug === "gaz"،
+// وحدة رئيسية واحدة rate=1، وحدات فرعية rate صحيح ≥1، أسماء فريدة ≤50 حرفاً.
+import { isGazStockType } from './utils'
 
 export const UNIT_NAME_MAX = 50
 export const DESC_MAX = 1000
+export const ADDRESS_MIN = 10
+export const ADDRESS_MAX = 200
+export const GAZ_STOCK_TYPES = ['exchange', 'refill']
 
 const clean = (s) => (s ?? '').toString().trim()
 
@@ -13,14 +18,56 @@ export function isPositiveInt(v) {
   return Number.isInteger(n) && n > 0
 }
 
+// التحقق من صحة الإحداثيات الجغرافية (يسمح بالقيمة 0 ويرفض الفراغ أو خارج النطاق)
+export function isValidLocation(lat, lng) {
+  const latStr = clean(lat)
+  const lngStr = clean(lng)
+  if (!latStr || !lngStr) return false
+  const latNum = Number(latStr)
+  const lngNum = Number(lngStr)
+  if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) return false
+  return latNum >= -90 && latNum <= 90 && lngNum >= -180 && lngNum <= 180
+}
+
 // التحقق من نموذج إنشاء مخزون جديد
-// يُرجع: { valid, typeError, formError, rowErrors: [err|null لكل صف] }
-export function validateCreateForm(typeId, units) {
+// يُرجع: { valid, typeError, addressError, locationError, gazTypeError, formError, rowErrors }
+export function validateCreateForm({
+  selectedType,
+  address = '',
+  lat = '',
+  lng = '',
+  gazStockType = '',
+  units = [],
+} = {}) {
   const rowErrors = new Array(units.length).fill(null)
   let typeError = null
+  let addressError = null
+  let locationError = null
+  let gazTypeError = null
   let formError = null
 
-  if (!typeId) typeError = 'يرجى اختيار نوع المخزون'
+  if (!selectedType?.id || !clean(selectedType?.slug)) {
+    typeError = 'يرجى اختيار نوع المخزون'
+  }
+
+  const trimmedAddress = clean(address)
+  const addressLength = Array.from(trimmedAddress).length
+  if (!trimmedAddress) {
+    addressError = 'يرجى إدخال عنوان المخزون'
+  } else if (addressLength < ADDRESS_MIN || addressLength > ADDRESS_MAX) {
+    addressError = `العنوان يجب أن يكون بين ${ADDRESS_MIN} و${ADDRESS_MAX} حرف`
+  }
+
+  if (!isValidLocation(lat, lng)) {
+    locationError = 'يرجى تحديد إحداثيات الموقع بشكل صحيح (خط العرض -90 إلى 90، خط الطول -180 إلى 180)'
+  }
+
+  if (isGazStockType(selectedType?.slug)) {
+    const normalizedGazType = clean(gazStockType).toLowerCase()
+    if (!GAZ_STOCK_TYPES.includes(normalizedGazType)) {
+      gazTypeError = 'يرجى اختيار نوع مخزون الغاز (استبدال أو تعبئة)'
+    }
+  }
 
   if (!units.length) {
     formError = 'يجب إضافة وحدة واحدة على الأقل'
@@ -54,8 +101,23 @@ export function validateCreateForm(typeId, units) {
     })
   }
 
-  const valid = !typeError && !formError && rowErrors.every((e) => !e)
-  return { valid, typeError, formError, rowErrors }
+  const valid =
+    !typeError &&
+    !addressError &&
+    !locationError &&
+    !gazTypeError &&
+    !formError &&
+    rowErrors.every((e) => !e)
+
+  return {
+    valid,
+    typeError,
+    addressError,
+    locationError,
+    gazTypeError,
+    formError,
+    rowErrors,
+  }
 }
 
 // التحقق من نموذج حركة مخزنية (وارد/منصرف)

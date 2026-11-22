@@ -5,7 +5,7 @@ import { stockApi } from '../../../services/api'
 import { Icons, SecondaryBtn } from '../../../shared/components/ui'
 import StockPage from '../components/StockPage'
 import { StockLoading, StockErrorState, SessionExpiredState, StockEmptyState } from '../components/StockStates'
-import { useMyStock } from '../hooks/useMyStock'
+import { useStock } from '../hooks/useStock'
 import { formatAmount, formatDateTime, isSessionExpired } from '../utils'
 
 const PAGE_SIZE = 20 // الحد الأقصى 100 حسب العقد
@@ -16,8 +16,8 @@ const FILTERS = [
   { key: 'out', label: 'المنصرف فقط' },
 ]
 
-export default function StockHistoryPage({ go }) {
-  const { status, stock, err, reload } = useMyStock()
+export default function StockHistoryPage({ go, stockId: propStockId }) {
+  const { status, stock, err, reload } = useStock(propStockId)
 
   const [filter, setFilter] = useState('all') // 'all' | 'in' | 'out'
   const [page, setPage] = useState(1)
@@ -68,7 +68,7 @@ export default function StockHistoryPage({ go }) {
   // ── حالات المخزون ──
   if (status === 'loading' || status === 'error' || status === 'empty') {
     return (
-      <StockPage title="سجل الحركات" subtitle="الوارد والمنصرف" go={go} backTo={ROUTES.STOCK_DASHBOARD} backLabel="لوحة المخزون">
+      <StockPage title="سجل الحركات" subtitle="الوارد والمنصرف" go={go} backTo={ROUTES.STOCK_DASHBOARD} backParams={{ stockId: propStockId }} backLabel="لوحة المخزون">
         {status === 'loading' && <StockLoading label="جارٍ تحميل سجل الحركات…" />}
         {status === 'error' && (isSessionExpired(err) ? <SessionExpiredState go={go} /> : <StockErrorState err={err} onRetry={reload} />)}
         {status === 'empty' && <StockEmptyState go={go} />}
@@ -79,7 +79,7 @@ export default function StockHistoryPage({ go }) {
   const sessionExpiredList = isSessionExpired(listErr)
 
   return (
-    <StockPage title="سجل الحركات" subtitle="الوارد والمنصرف" go={go} backTo={ROUTES.STOCK_DASHBOARD} backLabel="لوحة المخزون">
+    <StockPage title="سجل الحركات" subtitle="الوارد والمنصرف" go={go} backTo={ROUTES.STOCK_DASHBOARD} backParams={{ stockId: propStockId }} backLabel="لوحة المخزون">
       {/* ── الفلاتر ── */}
       <div className="flex items-center gap-2 p-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-bold" aria-label="فلترة الحركات">
         {FILTERS.map((f) => (

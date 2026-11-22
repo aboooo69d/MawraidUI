@@ -2,13 +2,13 @@
 import StockHeader from './StockHeader'
 import { ROUTES } from '../../../shared/constants/routes'
 
-export default function StockPage({ title, subtitle, go, backTo = ROUTES.DASHBOARD, backLabel = 'رجوع', action, children }) {
+export default function StockPage({ title, subtitle, go, backTo = ROUTES.DASHBOARD, backParams = {}, backLabel = 'رجوع', action, children }) {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans">
       <StockHeader
         title={title}
         subtitle={subtitle}
-        onBack={() => go(backTo)}
+        onBack={() => go(backTo, backParams)}
         backLabel={backLabel}
         action={action}
       />

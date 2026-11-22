@@ -3,8 +3,8 @@ import { ROUTES } from '../../../shared/constants/routes'
 import { Icons } from '../../../shared/components/ui'
 import StockPage from '../components/StockPage'
 import { StockLoading, StockErrorState, SessionExpiredState, StockEmptyState } from '../components/StockStates'
-import { useMyStock } from '../hooks/useMyStock'
-import { formatAmount, formatDateTime, isSessionExpired } from '../utils'
+import { useStock } from '../hooks/useStock'
+import { formatAmount, formatDateTime, formatGazStockType, isSessionExpired } from '../utils'
 
 const QUICK_ACTIONS = [
   { key: 'in', label: 'إضافة كمية', hint: 'توريد وارد', icon: Icons.Plus, route: ROUTES.STOCK_TRANSACTION, params: { direction: 'in' }, tone: 'emerald' },
@@ -20,8 +20,8 @@ const TONES = {
   sky: 'bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100',
 }
 
-export default function StockDashboardPage({ go }) {
-  const { status, stock, err, reload } = useMyStock()
+export default function StockDashboardPage({ go, stockId }) {
+  const { status, stock, err, reload } = useStock(stockId)
 
   const headerAction = (
     <button
@@ -45,6 +45,11 @@ export default function StockDashboardPage({ go }) {
     const mainUnit = stock?.units?.find((u) => u.is_main)
     const balances = Array.isArray(stock?.balances) ? stock.balances : []
     const unitsCount = Array.isArray(stock?.units) ? stock.units.length : 0
+    const gazTypeLabel = formatGazStockType(stock?.stock_details?.gaz_stock_type)
+    const hasCoords =
+      stock?.location &&
+      typeof stock.location.lat === 'number' &&
+      typeof stock.location.lng === 'number'
 
     body = (
       <>
@@ -57,7 +62,14 @@ export default function StockDashboardPage({ go }) {
                   <Icons.Box className="w-5 h-5" aria-hidden="true" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-black">{stock?.type?.name || 'المخزون الحالي'}</h2>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-sm font-black">{stock?.type?.name || 'المخزون الحالي'}</h2>
+                    {gazTypeLabel && (
+                      <span className="px-2 py-0.5 rounded-full bg-white/15 border border-white/25 text-white text-[10px] font-bold">
+                        {gazTypeLabel}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[11px] text-mawarid-200">الرصيد المتاح{mainUnit?.name ? ` (${mainUnit.name})` : ''}</p>
                 </div>
               </div>
@@ -98,7 +110,7 @@ export default function StockDashboardPage({ go }) {
                 <button
                   key={a.key}
                   type="button"
-                  onClick={() => go(a.route, a.params)}
+                  onClick={() => go(a.route, { ...a.params, stockId: stock.id })}
                   className={`min-h-[84px] rounded-xl border p-3 flex flex-col items-center justify-center gap-1.5 text-center transition cursor-pointer ${TONES[a.tone]}`}
                 >
                   <Icon className="w-5 h-5" aria-hidden="true" />
@@ -114,23 +126,53 @@ export default function StockDashboardPage({ go }) {
         <div className="rounded-2xl border border-slate-200 bg-white p-5 text-xs shadow-xs">
           <h3 className="text-sm font-black text-slate-900 mb-3">بيانات المخزون</h3>
           <div className="space-y-2">
-            <div className="flex justify-between text-slate-600">
+            <div className="flex justify-between gap-4 text-slate-600">
               <span>نوع المخزون:</span>
               <span className="font-bold text-slate-800">{stock?.type?.name || '—'}</span>
             </div>
-            <div className="flex justify-between text-slate-600">
+            {gazTypeLabel && (
+              <div className="flex justify-between gap-4 text-slate-600">
+                <span>نوع مخزون الغاز:</span>
+                <span className="font-bold text-slate-800">{gazTypeLabel}</span>
+              </div>
+            )}
+            <div className="flex justify-between gap-4 text-slate-600">
+              <span className="shrink-0">العنوان:</span>
+              <span className="font-bold text-slate-800 text-left">{stock?.address || '—'}</span>
+            </div>
+            <div className="flex justify-between gap-4 text-slate-600">
+              <span>الإحداثيات:</span>
+              {hasCoords ? (
+                <span className="font-bold text-slate-800 flex items-center gap-2">
+                  <span className="font-mono" dir="ltr">
+                    {stock.location.lat}, {stock.location.lng}
+                  </span>
+                  <a
+                    href={`https://www.google.com/maps?q=${stock.location.lat},${stock.location.lng}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-mawarid-700 hover:underline"
+                  >
+                    خريطة
+                  </a>
+                </span>
+              ) : (
+                <span className="font-bold text-slate-800">—</span>
+              )}
+            </div>
+            <div className="flex justify-between gap-4 text-slate-600">
               <span>الوحدة الرئيسية:</span>
               <span className="font-bold text-slate-800">{mainUnit?.name || '—'}</span>
             </div>
-            <div className="flex justify-between text-slate-600">
+            <div className="flex justify-between gap-4 text-slate-600">
               <span>عدد الوحدات:</span>
               <span className="font-bold text-slate-800">{unitsCount}</span>
             </div>
-            <div className="flex justify-between text-slate-600">
+            <div className="flex justify-between gap-4 text-slate-600">
               <span>تاريخ الإنشاء:</span>
               <span className="font-bold text-slate-800">{formatDateTime(stock?.created_at)}</span>
             </div>
-            <div className="flex justify-between text-slate-600">
+            <div className="flex justify-between gap-4 text-slate-600">
               <span>آخر تحديث:</span>
               <span className="font-bold text-slate-800">{formatDateTime(stock?.updated_at)}</span>
             </div>

@@ -5,12 +5,12 @@ import { stockApi } from '../../../services/api'
 import { ErrorBanner, Icons, InfoBanner, Label, PrimaryBtn, TextInput } from '../../../shared/components/ui'
 import StockPage from '../components/StockPage'
 import { StockLoading, StockErrorState, SessionExpiredState, StockEmptyState } from '../components/StockStates'
-import { useMyStock } from '../hooks/useMyStock'
+import { useStock } from '../hooks/useStock'
 import { formatAmount, isSessionExpired } from '../utils'
 import { DESC_MAX, validateTransaction } from '../validation'
 
-export default function StockTransactionPage({ go, showToast, direction }) {
-  const { status, stock, err, reload } = useMyStock()
+export default function StockTransactionPage({ go, showToast, stockId, direction }) {
+  const { status, stock, err, reload } = useStock(stockId)
   const [unitId, setUnitId] = useState('')
   const [amount, setAmount] = useState('')
   const [description, setDescription] = useState('')
@@ -25,9 +25,9 @@ export default function StockTransactionPage({ go, showToast, direction }) {
   useEffect(() => {
     if (direction !== 'in' && direction !== 'out' && !redirectedRef.current) {
       redirectedRef.current = true
-      go(ROUTES.STOCK_DASHBOARD)
+      go(ROUTES.STOCK_DASHBOARD, { stockId })
     }
-  }, [direction, go])
+  }, [direction, go, stockId])
 
   const isIn = direction === 'in'
   const units = Array.isArray(stock?.units) ? stock.units : []
@@ -61,7 +61,7 @@ export default function StockTransactionPage({ go, showToast, direction }) {
 
       await stockApi.createStockTransaction(stock.id, payload)
       showToast?.(isIn ? 'تمت إضافة الكمية بنجاح' : 'تم سحب الكمية بنجاح')
-      go(ROUTES.STOCK_DASHBOARD) // اللوحة تعيد جلب الأرصدة من الخادم
+      go(ROUTES.STOCK_DASHBOARD, { stockId: stock.id }) // اللوحة تعيد جلب الأرصدة من الخادم
     } catch (e2) {
       if (isSessionExpired(e2)) setSessionExpired(true)
       else setServerErr(e2) // يشمل 1602 نفاد الرصيد و1601/1603/1605
@@ -73,21 +73,21 @@ export default function StockTransactionPage({ go, showToast, direction }) {
   // ── حالات المخزون ──
   if (status === 'loading') {
     return (
-      <StockPage title={isIn ? 'إضافة كمية' : 'سحب كمية'} go={go} backTo={ROUTES.STOCK_DASHBOARD} backLabel="لوحة المخزون">
+      <StockPage title={isIn ? 'إضافة كمية' : 'سحب كمية'} go={go} backTo={ROUTES.STOCK_DASHBOARD} backParams={{ stockId }} backLabel="لوحة المخزون">
         <StockLoading />
       </StockPage>
     )
   }
   if (status === 'error') {
     return (
-      <StockPage title={isIn ? 'إضافة كمية' : 'سحب كمية'} go={go} backTo={ROUTES.STOCK_DASHBOARD} backLabel="لوحة المخزون">
+      <StockPage title={isIn ? 'إضافة كمية' : 'سحب كمية'} go={go} backTo={ROUTES.STOCK_DASHBOARD} backParams={{ stockId }} backLabel="لوحة المخزون">
         {isSessionExpired(err) ? <SessionExpiredState go={go} /> : <StockErrorState err={err} onRetry={reload} />}
       </StockPage>
     )
   }
   if (status === 'empty') {
     return (
-      <StockPage title={isIn ? 'إضافة كمية' : 'سحب كمية'} go={go} backTo={ROUTES.STOCK_DASHBOARD} backLabel="لوحة المخزون">
+      <StockPage title={isIn ? 'إضافة كمية' : 'سحب كمية'} go={go} backTo={ROUTES.STOCK_DASHBOARD} backParams={{ stockId }} backLabel="لوحة المخزون">
         <StockEmptyState go={go} />
       </StockPage>
     )
@@ -96,7 +96,7 @@ export default function StockTransactionPage({ go, showToast, direction }) {
   const title = isIn ? 'إضافة كمية (وارد)' : 'سحب كمية (منصرف)'
 
   return (
-    <StockPage title={title} subtitle="حركة مخزنية" go={go} backTo={ROUTES.STOCK_DASHBOARD} backLabel="لوحة المخزون">
+    <StockPage title={title} subtitle="حركة مخزنية" go={go} backTo={ROUTES.STOCK_DASHBOARD} backParams={{ stockId }} backLabel="لوحة المخزون">
       {sessionExpired ? (
         <SessionExpiredState go={go} />
       ) : (

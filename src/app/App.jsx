@@ -64,10 +64,10 @@ function Shell() {
     [ROUTES.DASHBOARD]: <DashboardPage go={go} />,
     // ── ميزة المخزون (provider only) ──
     [ROUTES.STOCK_CREATE]: <StockCreatePage go={go} showToast={showToast} />,
-    [ROUTES.STOCK_DASHBOARD]: <StockDashboardPage go={go} showToast={showToast} />,
-    [ROUTES.STOCK_TRANSACTION]: <StockTransactionPage go={go} showToast={showToast} direction={params.direction} />,
-    [ROUTES.STOCK_UNITS]: <StockUnitsPage go={go} showToast={showToast} />,
-    [ROUTES.STOCK_HISTORY]: <StockHistoryPage go={go} showToast={showToast} />,
+    [ROUTES.STOCK_DASHBOARD]: <StockDashboardPage go={go} showToast={showToast} stockId={params.stockId} />,
+    [ROUTES.STOCK_TRANSACTION]: <StockTransactionPage go={go} showToast={showToast} stockId={params.stockId} direction={params.direction} />,
+    [ROUTES.STOCK_UNITS]: <StockUnitsPage go={go} showToast={showToast} stockId={params.stockId} />,
+    [ROUTES.STOCK_HISTORY]: <StockHistoryPage go={go} showToast={showToast} stockId={params.stockId} />,
   }
 
   const current = resolveCurrentScreen(screen, user)

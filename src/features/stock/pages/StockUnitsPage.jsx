@@ -5,12 +5,12 @@ import { stockApi } from '../../../services/api'
 import { Icons, ErrorBanner, Label, PrimaryBtn, SecondaryBtn, TextInput } from '../../../shared/components/ui'
 import StockPage from '../components/StockPage'
 import { StockLoading, StockErrorState, SessionExpiredState, StockEmptyState } from '../components/StockStates'
-import { useMyStock } from '../hooks/useMyStock'
+import { useStock } from '../hooks/useStock'
 import { isSessionExpired } from '../utils'
 import { UNIT_NAME_MAX, validateUnitForm } from '../validation'
 
-export default function StockUnitsPage({ go, showToast }) {
-  const { status, stock, err, reload } = useMyStock()
+export default function StockUnitsPage({ go, showToast, stockId }) {
+  const { status, stock, err, reload } = useStock(stockId)
 
   // نموذج إضافة وحدة فرعية
   const [addName, setAddName] = useState('')
@@ -120,7 +120,7 @@ export default function StockUnitsPage({ go, showToast }) {
   // ── حالات المخزون ──
   if (status === 'loading' || status === 'error' || status === 'empty') {
     return (
-      <StockPage title="إدارة الوحدات" subtitle="الوحدات ومعاملات التحويل" go={go} backTo={ROUTES.STOCK_DASHBOARD} backLabel="لوحة المخزون">
+      <StockPage title="إدارة الوحدات" subtitle="الوحدات ومعاملات التحويل" go={go} backTo={ROUTES.STOCK_DASHBOARD} backParams={{ stockId }} backLabel="لوحة المخزون">
         {status === 'loading' && <StockLoading />}
         {status === 'error' && (isSessionExpired(err) ? <SessionExpiredState go={go} /> : <StockErrorState err={err} onRetry={reload} />)}
         {status === 'empty' && <StockEmptyState go={go} />}
@@ -129,7 +129,7 @@ export default function StockUnitsPage({ go, showToast }) {
   }
 
   return (
-    <StockPage title="إدارة الوحدات" subtitle="الوحدات ومعاملات التحويل" go={go} backTo={ROUTES.STOCK_DASHBOARD} backLabel="لوحة المخزون">
+    <StockPage title="إدارة الوحدات" subtitle="الوحدات ومعاملات التحويل" go={go} backTo={ROUTES.STOCK_DASHBOARD} backParams={{ stockId }} backLabel="لوحة المخزون">
       {sessionExpired ? (
         <SessionExpiredState go={go} />
       ) : (
