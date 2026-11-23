@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { ROUTES } from '../../../shared/constants/routes'
 import { stockApi } from '../../../services/api'
 import { Icons, ErrorBanner, InfoBanner, Label, PrimaryBtn, SecondaryBtn, TextInput } from '../../../shared/components/ui'
+import LocationPicker from '../../../shared/components/ui/LocationPicker'
 import StockPage from '../components/StockPage'
 import { SessionExpiredState } from '../components/StockStates'
 import { isGazStockType, isSessionExpired } from '../utils'
@@ -21,6 +22,7 @@ export default function StockCreatePage({ go, showToast }) {
   const [lng, setLng] = useState('')
   const [locating, setLocating] = useState(false)
   const [geoErr, setGeoErr] = useState(null)
+  const [accuracy, setAccuracy] = useState(null)
   const [units, setUnits] = useState(() => [newRow(true)])
   const [submitted, setSubmitted] = useState(false)
   const [serverErr, setServerErr] = useState(null)
@@ -67,30 +69,74 @@ export default function StockCreatePage({ go, showToast }) {
 
   const removeUnit = (i) => setUnits((prev) => prev.filter((_, idx) => idx !== i))
 
-  function detectLocation() {
+  const pickedRef = useRef(false)
+  const pickLocation = (la, ln) => {
+    pickedRef.current = true
+    stopWatch()
+    setLocating(false)
+    setAccuracy(null)
+    setLat(String(la))
+    setLng(String(ln))
+    setGeoErr(null)
+  }
+
+  const watchRef = useRef(null)
+  const stopWatch = () => {
+    if (watchRef.current != null && typeof navigator !== 'undefined') {
+      navigator.geolocation?.clearWatch?.(watchRef.current)
+    }
+    watchRef.current = null
+  }
+  useEffect(() => stopWatch, [])
+
+  // تحديد دقيق: نتابع قراءات GPS ونحتفظ بالأدق حتى ≤ 25م أو انتهاء المهلة
+  function detectLocation(auto = false) {
     setGeoErr(null)
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
       setGeoErr('المتصفح لا يدعم تحديد الموقع الجغرافي')
       return
     }
+    stopWatch()
     setLocating(true)
-    navigator.geolocation.getCurrentPosition(
+    let best = Infinity
+    let timer = null
+    const finish = () => {
+      clearTimeout(timer)
+      stopWatch()
+      if (mountedRef.current) setLocating(false)
+    }
+    watchRef.current = navigator.geolocation.watchPosition(
       (pos) => {
-        if (!mountedRef.current) return
-        setLat(String(Number(pos.coords.latitude.toFixed(6))))
-        setLng(String(Number(pos.coords.longitude.toFixed(6))))
-        setLocating(false)
+        if (!mountedRef.current) return finish()
+        const acc = pos.coords.accuracy ?? Infinity
+        if (auto === true && pickedRef.current) return finish() // لا نستبدل اختيار المستخدم
+        if (acc < best) {
+          best = acc
+          setLat(String(Number(pos.coords.latitude.toFixed(6))))
+          setLng(String(Number(pos.coords.longitude.toFixed(6))))
+          setAccuracy(Math.round(acc))
+        }
+        if (acc <= 25) finish()
       },
       (error) => {
         if (!mountedRef.current) return
-        if (error?.code === 1) setGeoErr('تم رفض إذن الوصول إلى الموقع الجغرافي')
-        else if (error?.code === 3) setGeoErr('انتهت مهلة تحديد الموقع — حاول مجدداً أو أدخل الإحداثيات يدوياً')
-        else setGeoErr('تعذر تحديد الموقع الجغرافي تلقائياً — أدخل الإحداثيات يدوياً')
-        setLocating(false)
+        if (best === Infinity) {
+          if (error?.code === 1) setGeoErr('تم رفض إذن الوصول إلى الموقع الجغرافي')
+          else if (error?.code === 3) setGeoErr('انتهت مهلة تحديد الموقع — حاول مجدداً أو حدّد الموقع على الخريطة')
+          else setGeoErr('تعذر تحديد الموقع الجغرافي تلقائياً — حدّده على الخريطة')
+        }
+        finish()
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     )
+    timer = setTimeout(finish, 15000)
   }
+
+  // طلب إذن الموقع تلقائياً عند فتح الصفحة
+  useEffect(() => {
+    detectLocation(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const check = validateCreateForm({
     selectedType,
@@ -266,11 +312,11 @@ export default function StockCreatePage({ go, showToast }) {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <h2 className="text-sm font-black text-slate-900">الموقع الجغرافي</h2>
-                  <p className="text-[11px] text-slate-500">حدّد الإحداثيات عبر GPS أو أدخلها يدوياً</p>
+                  <p className="text-[11px] text-slate-500">سيُطلب إذن موقعك تلقائياً — انقر على الخريطة أو اسحب الدبوس لضبط الموقع بدقة</p>
                 </div>
                 <button
                   type="button"
-                  onClick={detectLocation}
+                  onClick={() => detectLocation()}
                   disabled={locating}
                   className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-mawarid-200 bg-mawarid-50 hover:bg-mawarid-100 text-mawarid-800 text-xs font-bold transition cursor-pointer disabled:opacity-60 disabled:cursor-wait"
                 >
@@ -281,13 +327,34 @@ export default function StockCreatePage({ go, showToast }) {
 
               {geoErr && <p className="text-[12px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">{geoErr}</p>}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" dir="ltr">
+              <LocationPicker
+                lat={hasValidLocation ? Number(lat) : null}
+                lng={hasValidLocation ? Number(lng) : null}
+                accuracy={accuracy}
+                onChange={pickLocation}
+              />
+
+              {hasValidLocation && (
+                <p className="text-[11px] font-bold text-slate-500" dir="ltr">
+                  {Number(lat)}, {Number(lng)}
+                  {accuracy != null && ` (±${accuracy} m)`}
+                </p>
+              )}
+              {accuracy != null && accuracy > 100 && (
+                <p className="text-[12px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                  دقة الموقع منخفضة (±{accuracy} متر) — اسحب الدبوس أو انقر على الخريطة لتحديد موقع المخزون بدقة.
+                </p>
+              )}
+
+              <details className="text-xs">
+                <summary className="cursor-pointer font-bold text-slate-500">إدخال الإحداثيات يدوياً (اختياري)</summary>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" dir="ltr">
                 <div>
                   <Label req htmlFor="stock-lat">خط العرض (Latitude)</Label>
                   <TextInput
                     id="stock-lat"
                     value={lat}
-                    onChange={(v) => setLat(v)}
+                    onChange={(v) => { pickedRef.current = true; setLat(v) }}
                     placeholder="15.3694"
                     inputMode="decimal"
                     dir="ltr"
@@ -299,7 +366,7 @@ export default function StockCreatePage({ go, showToast }) {
                   <TextInput
                     id="stock-lng"
                     value={lng}
-                    onChange={(v) => setLng(v)}
+                    onChange={(v) => { pickedRef.current = true; setLng(v) }}
                     placeholder="44.1910"
                     inputMode="decimal"
                     dir="ltr"
@@ -308,21 +375,10 @@ export default function StockCreatePage({ go, showToast }) {
                 </div>
               </div>
 
+              </details>
+
               {showErr(check.locationError)}
 
-              {hasValidLocation && (
-                <div className="pt-1">
-                  <a
-                    href={`https://www.google.com/maps?q=${Number(lat)},${Number(lng)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-mawarid-700 hover:underline"
-                  >
-                    <Icons.MapPin className="w-3.5 h-3.5" aria-hidden="true" />
-                    <span>معاينة الموقع على الخريطة</span>
-                  </a>
-                </div>
-              )}
             </div>
 
             {/* ── الوحدة الرئيسية (معاملها ثابت 1) ── */}

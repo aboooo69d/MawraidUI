@@ -6,6 +6,8 @@ import StockCreatePage from '../pages/StockCreatePage'
 import { ROUTES } from '../../../shared/constants/routes'
 import { STOCK_TYPES, ok, stubApi, renderWithAuth } from './helpers'
 
+vi.mock('../../../shared/components/ui/LocationPicker', () => ({ default: () => null }))
+
 afterEach(() => {
   vi.unstubAllGlobals()
   vi.clearAllMocks()
