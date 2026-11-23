@@ -47,3 +47,18 @@ describe('resolveCurrentScreen — حماية شاشات المخزون', () => 
     expect(resolveCurrentScreen(ROUTES.DASHBOARD, provider)).toBe(ROUTES.DASHBOARD)
   })
 })
+
+describe('resolveCurrentScreen — address role restrictions', () => {
+  const admin = { role_name: 'admin' }
+
+  it.each([
+    [ROUTES.CITIZEN_ADDRESSES, consumer, [admin, provider]],
+    [ROUTES.ADMIN_ADDRESSES, admin, [consumer, provider]],
+  ])('requires the correct role for %s', (route, allowed, denied) => {
+    expect(resolveCurrentScreen(route, null)).toBe(ROUTES.LOGIN)
+    expect(resolveCurrentScreen(route, allowed)).toBe(route)
+    for (const user of denied) {
+      expect(resolveCurrentScreen(route, user)).toBe(ROUTES.DASHBOARD)
+    }
+  })
+})

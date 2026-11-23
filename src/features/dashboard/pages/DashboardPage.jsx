@@ -1,6 +1,7 @@
 // ═══════════ لوحة التحكم بعد الدخول — منصة موارد (تعز) ═══════════
 import { useAuth } from '../../auth/hooks/useAuth'
 import { Icons, BrandLogo, ResourceBadge } from '../../../shared/components/ui'
+import { ROUTES } from '../../../shared/constants/routes'
 import ProviderStockCard from '../../stock/components/ProviderStockCard'
 
 export default function Dashboard({ go }) {
@@ -14,6 +15,9 @@ export default function Dashboard({ go }) {
   if (!user) return null
 
   const isProvider = user.role_name === 'provider'
+  const isCitizen = user.role_name === 'consumer'
+  const isAdmin = user.role_name === 'admin'
+  const addressEntry = isAdmin ? 'عرض عناوين المواطنين' : 'عناويني'
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans">
@@ -62,14 +66,14 @@ export default function Dashboard({ go }) {
                 </div>
                 <p className="text-xs sm:text-sm text-slate-300 font-mono" dir="ltr">+967 {user.phone}</p>
                 <div className="mt-2 text-xs font-medium text-mawarid-200">
-                  {isProvider ? 'وكيل / مركز توزيع معتمد في مدينة تعز' : 'مواطن / مستفيد من الحصص الأساسية'}
+                  {isAdmin ? 'إدارة المنصة' : isProvider ? 'وكيل / مركز توزيع معتمد في مدينة تعز' : 'مواطن / مستفيد من الحصص الأساسية'}
                 </div>
               </div>
             </div>
 
             <div className="flex items-center gap-2 self-start sm:self-center">
               <span className="px-4 py-2 rounded-xl bg-white/10 border border-white/15 text-xs font-bold text-white">
-                {isProvider ? 'صلاحية: وكيل خدمة' : 'صلاحية: مستفيد معتمد'}
+                {isAdmin ? 'صلاحية: مسؤول' : isProvider ? 'صلاحية: وكيل خدمة' : 'صلاحية: مستفيد معتمد'}
               </span>
             </div>
           </div>
@@ -81,6 +85,20 @@ export default function Dashboard({ go }) {
             <h2 className="text-lg font-black text-slate-900">إدارة المخزون</h2>
             <ProviderStockCard go={go} />
           </div>
+        )}
+
+        {(isCitizen || isAdmin) && (
+          <button
+            type="button"
+            onClick={() => go(isAdmin ? ROUTES.ADMIN_ADDRESSES : ROUTES.CITIZEN_ADDRESSES)}
+            className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-start shadow-xs hover:border-mawarid-500 sm:w-auto sm:pe-6"
+          >
+            <span className="rounded-xl bg-mawarid-50 p-2.5 text-mawarid-700">
+              <Icons.MapPin className="w-5 h-5" />
+            </span>
+            <span className="flex-1 font-black text-slate-900">{addressEntry}</span>
+            <Icons.ArrowRight className="w-4 h-4 rotate-180 text-mawarid-700" />
+          </button>
         )}
 
         {/* بطاقات حالة الموارد والحصص */}

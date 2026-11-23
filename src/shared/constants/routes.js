@@ -7,6 +7,8 @@ export const ROUTES = {
   FORGOT_PASSWORD: 'forgot',
   RESET_PASSWORD: 'reset',
   DASHBOARD: 'dashboard',
+  CITIZEN_ADDRESSES: 'citizen-addresses',
+  ADMIN_ADDRESSES: 'admin-addresses',
   // ── ميزة المخزون (للمزود فقط) ──
   STOCK_CREATE: 'stock-create',
   STOCK_DASHBOARD: 'stock-dashboard',
