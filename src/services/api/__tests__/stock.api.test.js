@@ -16,7 +16,7 @@ afterEach(() => {
 })
 
 describe('stockApi — مسارات وطرق الطلب (Multi-Stock)', () => {
-  it('getMyStocks → GET /api/v1/stocks مع بيانات الجلسة', async () => {
+  it('getMyStocks → GET /api/v1/stocks/me مع بيانات الجلسة', async () => {
     const fetchMock = vi.fn(async () => ok([{ id: 's1', available: 0 }]))
     vi.stubGlobal('fetch', fetchMock)
 
@@ -24,7 +24,7 @@ describe('stockApi — مسارات وطرق الطلب (Multi-Stock)', () => {
 
     expect(res).toEqual([{ id: 's1', available: 0 }])
     const [url, opts] = fetchMock.mock.calls[0]
-    expect(url).toBe('/api/v1/stocks')
+    expect(url).toBe('/api/v1/stocks/me')
     expect(opts.method).toBe('GET')
     expect(opts.credentials).toBe('include')
     expect(url).not.toContain('/api/v1/api/v1')
@@ -53,7 +53,7 @@ describe('stockApi — مسارات وطرق الطلب (Multi-Stock)', () => {
     expect(emptyRes).toEqual([])
   })
 
-  it('createStock → POST /api/v1/stocks بالبنية الجديدة', async () => {
+  it('createStock → POST /api/v1/stocks/me بالبنية الجديدة', async () => {
     const fetchMock = vi.fn(async () => ok({ id: 's1', available: 0 }))
     vi.stubGlobal('fetch', fetchMock)
 
@@ -71,22 +71,22 @@ describe('stockApi — مسارات وطرق الطلب (Multi-Stock)', () => {
     await stockApi.createStock(payload)
 
     const [url, opts] = fetchMock.mock.calls[0]
-    expect(url).toBe('/api/v1/stocks')
+    expect(url).toBe('/api/v1/stocks/me')
     expect(opts.method).toBe('POST')
     expect(opts.headers['Content-Type']).toBe('application/json')
     expect(JSON.parse(opts.body)).toEqual(payload)
   })
 
-  it('getStockById → GET /api/v1/stocks/:stock_id', async () => {
+  it('getStockById → GET /api/v1/stocks/me/:stock_id', async () => {
     const fetchMock = vi.fn(async () => ok({ id: 'abc' }))
     vi.stubGlobal('fetch', fetchMock)
 
     await stockApi.getStockById('abc')
 
-    expect(fetchMock.mock.calls[0][0]).toBe('/api/v1/stocks/abc')
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/v1/stocks/me/abc')
   })
 
-  it('createStockTransaction → POST /api/v1/stocks/:id/transactions', async () => {
+  it('createStockTransaction → POST /api/v1/stocks/me/:id/transactions', async () => {
     const fetchMock = vi.fn(async () => ok({ id: 't1' }))
     vi.stubGlobal('fetch', fetchMock)
 
@@ -94,31 +94,31 @@ describe('stockApi — مسارات وطرق الطلب (Multi-Stock)', () => {
     await stockApi.createStockTransaction('abc', payload)
 
     const [url, opts] = fetchMock.mock.calls[0]
-    expect(url).toBe('/api/v1/stocks/abc/transactions')
+    expect(url).toBe('/api/v1/stocks/me/abc/transactions')
     expect(opts.method).toBe('POST')
     expect(JSON.parse(opts.body)).toEqual(payload)
   })
 
-  it('addStockUnit → POST /api/v1/stocks/:id/units (وحدة فرعية)', async () => {
+  it('addStockUnit → POST /api/v1/stocks/me/:id/units (وحدة فرعية)', async () => {
     const fetchMock = vi.fn(async () => ok({ id: 12 }))
     vi.stubGlobal('fetch', fetchMock)
 
     await stockApi.addStockUnit('abc', { name: 'طرد', rate: 24, is_main: false })
 
     const [url, opts] = fetchMock.mock.calls[0]
-    expect(url).toBe('/api/v1/stocks/abc/units')
+    expect(url).toBe('/api/v1/stocks/me/abc/units')
     expect(opts.method).toBe('POST')
     expect(JSON.parse(opts.body)).toEqual({ name: 'طرد', rate: 24, is_main: false })
   })
 
-  it('updateStockUnit → PATCH /api/v1/stocks/:id/units/:unit_id', async () => {
+  it('updateStockUnit → PATCH /api/v1/stocks/me/:id/units/:unit_id', async () => {
     const fetchMock = vi.fn(async () => ok({ id: 11 }))
     vi.stubGlobal('fetch', fetchMock)
 
     await stockApi.updateStockUnit('abc', 11, { name: 'كرتون كبير', rate: 15 })
 
     const [url, opts] = fetchMock.mock.calls[0]
-    expect(url).toBe('/api/v1/stocks/abc/units/11')
+    expect(url).toBe('/api/v1/stocks/me/abc/units/11')
     expect(opts.method).toBe('PATCH')
     expect(JSON.parse(opts.body)).toEqual({ name: 'كرتون كبير', rate: 15 })
   })
@@ -133,7 +133,7 @@ describe('stockApi — سجل الحركات والترقيم', () => {
 
     const res = await stockApi.getStockTransactions('abc', { page: 2, page_size: 20, is_in: true })
 
-    expect(fetchMock.mock.calls[0][0]).toBe('/api/v1/stocks/abc/transactions?page=2&page_size=20&is_in=true')
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/v1/stocks/me/abc/transactions?page=2&page_size=20&is_in=true')
     expect(res.data).toHaveLength(1)
     expect(res.meta).toEqual({ page: 2, per_page: 20, total: 45, total_pages: 3 })
   })
