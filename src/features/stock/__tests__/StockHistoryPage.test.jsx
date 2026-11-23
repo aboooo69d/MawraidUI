@@ -29,9 +29,9 @@ const TX_OUT = {
 
 function stubHistory(listHandler) {
   return stubApi(({ url, method }) => {
-    if (method === 'GET' && url.endsWith(`/api/v1/stocks/${STOCK.id}`)) return ok(STOCK)
-    if (url.includes('/transactions') && method === 'GET') return listHandler(url)
-    return ok({})
+    if (method === 'GET' && url === `/api/v1/stocks/me/${STOCK.id}`) return ok(STOCK)
+    if (method === 'GET' && url.split('?')[0] === `/api/v1/stocks/me/${STOCK.id}/transactions`) return listHandler(url)
+    throw new Error(`Unexpected request: ${method} ${url}`)
   })
 }
 
@@ -121,4 +121,21 @@ describe('StockHistoryPage — العرض والفلترة والترقيم', ()
     expect(screen.queryByText('صرف لأسرة')).toBeNull() // لم تتجاوز القديمة الجديدة
     expect(screen.getByText('توريد 5 كراتين')).toBeTruthy()
   })
+})
+
+
+it('يسمح بالرجوع إلى الصفحة السابقة عند فراغ الصفحة التالية', async () => {
+  const { calls } = stubHistory((url) => url.includes('page=2')
+    ? ok([], { page: 2, per_page: 20, total: 20, total_pages: 1 })
+    : ok([TX_IN], { page: 1, per_page: 20, total: 21, total_pages: 2 })
+  )
+  renderWithAuth(<StockHistoryPage go={vi.fn()} stockId={STOCK.id} />)
+  await screen.findByText(TX_IN.description)
+  fireEvent.click(screen.getByRole('button', { name: 'التالي' }))
+
+  expect(await screen.findByText('لا توجد حركات مسجلة')).toBeTruthy()
+  expect(screen.getByRole('button', { name: 'التالي' }).disabled).toBe(true)
+  fireEvent.click(screen.getByRole('button', { name: 'السابق' }))
+  expect(await screen.findByText(TX_IN.description)).toBeTruthy()
+  expect(calls.filter(({ url }) => url.includes('page=1'))).toHaveLength(2)
 })

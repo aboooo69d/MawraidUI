@@ -3,8 +3,8 @@
 // انتهاء الجلسة: 401 Unauthorized أو كود التطبيق 1106
 export const isSessionExpired = (err) => err?.status === 401 || err?.code === 1106
 
-// غياب المخزون: كود 1600، أو 404 بدون كود تطبيق (رد غير مغلّف) — لا نعامل أي 404 كغياب مخزون
-export const isStockMissing = (err) => err?.code === 1600 || (err?.status === 404 && err?.code == null)
+// 1600 هو خطأ Nova لغياب المخزون
+export const isStockMissing = (err) => err?.status === 404 && err?.code === 1600
 
 // التحقق من نوع مخزون الغاز (gaz)
 export const isGazStockType = (slug) =>

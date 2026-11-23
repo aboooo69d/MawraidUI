@@ -107,7 +107,8 @@ export default function StockUnitsPage({ go, showToast, stockId }) {
           setEditing(null)
           reload()
         } catch (e3) {
-          setEditServerErr(e3)
+          if (isSessionExpired(e3)) setSessionExpired(true)
+          else setEditServerErr(e3)
         }
       } else {
         setEditServerErr(e2) // 1609 تكرار، 1610 معامل وحدة مستخدمة

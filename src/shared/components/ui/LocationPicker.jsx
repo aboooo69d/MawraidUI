@@ -43,7 +43,7 @@ function Recenter({ position }) {
 export default function LocationPicker({ lat, lng, accuracy, onChange }) {
   const position = lat != null && lng != null ? [lat, lng] : null
   return (
-    <div className="rounded-xl overflow-hidden border border-slate-200 h-[320px] relative z-0" dir="ltr">
+    <div className="rounded-xl overflow-hidden border border-slate-200 relative z-0" style={{ height: 320 }} dir="ltr">
       <MapContainer
         center={position || DEFAULT_CENTER}
         zoom={position ? 16 : 6}

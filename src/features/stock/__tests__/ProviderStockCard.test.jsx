@@ -13,9 +13,9 @@ afterEach(() => {
 
 describe('ProviderStockCard — تعدد المخازن', () => {
   it('يعرض حالة تحميل ثم «لا يوجد مخزون مسجل» عند مصفوفة فارغة أو غياب data', async () => {
-    stubApi(({ url }) => {
-      if (url.endsWith('/api/v1/stocks')) return json({ success: true })
-      return ok({})
+    stubApi(({ url, method }) => {
+      if (method === 'GET' && url === '/api/v1/stocks/me') return json({ success: true })
+      throw new Error(`Unexpected request: ${method} ${url}`)
     })
     const go = vi.fn()
 
@@ -29,9 +29,9 @@ describe('ProviderStockCard — تعدد المخازن', () => {
   })
 
   it('يعرض بطاقات المخازن مع إبقاء زر «إضافة مخزون جديد» متاحاً دائماً', async () => {
-    stubApi(({ url }) => {
-      if (url.endsWith('/api/v1/stocks')) return ok([STOCK, STOCK_WATER])
-      return ok({})
+    stubApi(({ url, method }) => {
+      if (method === 'GET' && url === '/api/v1/stocks/me') return ok([STOCK, STOCK_WATER])
+      throw new Error(`Unexpected request: ${method} ${url}`)
     })
     const go = vi.fn()
 
@@ -51,9 +51,9 @@ describe('ProviderStockCard — تعدد المخازن', () => {
   })
 
   it('يعرض خطأ مع إعادة محاولة (لا يعامل أخطاء الخادم كبيانات فارغة)', async () => {
-    const { calls } = stubApi(({ url }) => {
-      if (url.endsWith('/api/v1/stocks')) return apiError(500, 5000, 'server error')
-      return ok({})
+    const { calls } = stubApi(({ url, method }) => {
+      if (method === 'GET' && url === '/api/v1/stocks/me') return apiError(500, 5000, 'server error')
+      throw new Error(`Unexpected request: ${method} ${url}`)
     })
 
     renderWithAuth(<ProviderStockCard go={vi.fn()} />)
@@ -66,9 +66,9 @@ describe('ProviderStockCard — تعدد المخازن', () => {
   })
 
   it('يعرض حالة انتهاء الجلسة عند 401 / 1106', async () => {
-    stubApi(({ url }) => {
-      if (url.endsWith('/api/v1/stocks')) return apiError(401, 1106, 'unauthorized')
-      return ok({})
+    stubApi(({ url, method }) => {
+      if (method === 'GET' && url === '/api/v1/stocks/me') return apiError(401, 1106, 'unauthorized')
+      throw new Error(`Unexpected request: ${method} ${url}`)
     })
 
     renderWithAuth(<ProviderStockCard go={vi.fn()} />)

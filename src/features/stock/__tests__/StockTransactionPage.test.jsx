@@ -13,9 +13,9 @@ afterEach(() => {
 
 function stubTx(postHandler) {
   return stubApi(({ url, method, body }) => {
-    if (method === 'GET' && url.endsWith(`/api/v1/stocks/${STOCK.id}`)) return ok(STOCK)
-    if (method === 'POST' && url.includes('/transactions')) return postHandler(body)
-    return ok({})
+    if (method === 'GET' && url === `/api/v1/stocks/me/${STOCK.id}`) return ok(STOCK)
+    if (method === 'POST' && url === `/api/v1/stocks/me/${STOCK.id}/transactions`) return postHandler(body)
+    throw new Error(`Unexpected request: ${method} ${url}`)
   })
 }
 
@@ -38,7 +38,7 @@ describe('StockTransactionPage — حركة وارد', () => {
 
     await waitFor(() => expect(calls.filter((c) => c.method === 'POST').length).toBe(1))
     const post = calls.find((c) => c.method === 'POST')
-    expect(post.url).toBe(`/api/v1/stocks/${STOCK.id}/transactions`)
+    expect(post.url).toBe(`/api/v1/stocks/me/${STOCK.id}/transactions`)
     expect(post.body).toEqual({ amount: 5, unit_id: 11, is_in: true })
 
     await waitFor(() => expect(go).toHaveBeenCalledWith(ROUTES.STOCK_DASHBOARD, { stockId: STOCK.id }))
