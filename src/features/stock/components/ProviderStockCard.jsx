@@ -1,13 +1,20 @@
 // ═══════════ بطاقة مخازن المزود في لوحة التحكم (Multi-Stock — للمزود فقط) ═══════════
 // تعرض قائمة مخازن المزود أو حالة فارغة، مع إبقاء زر «إضافة مخزون جديد» متاحاً دائماً.
+import { useEffect } from 'react'
 import { ROUTES } from '../../../shared/constants/routes'
 import { Icons } from '../../../shared/components/ui'
 import { useMyStocks } from '../hooks/useMyStocks'
 import { formatAmount, formatDateTime, formatGazStockType, formatPrice, isSessionExpired } from '../utils'
 import { StockLoading, StockErrorState, SessionExpiredState, StockEmptyState } from './StockStates'
 
-export default function ProviderStockCard({ go }) {
+export default function ProviderStockCard({ go, refreshTrigger = 0 }) {
   const { status, stocks, err, reload } = useMyStocks()
+
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      reload()
+    }
+  }, [refreshTrigger, reload])
 
   if (status === 'loading') return <StockLoading label="جارٍ تحميل قائمة المخازن…" />
 
@@ -99,16 +106,44 @@ export default function ProviderStockCard({ go }) {
                     })}
                   </div>
                 )}
+
+                {(stock?.pending_orders !== undefined || stock?.completed_orders !== undefined) && (
+                  <div className="grid grid-cols-2 gap-2 pb-4">
+                    <div className="rounded-xl bg-amber-50/70 border border-amber-200/80 px-3 py-2 flex items-center justify-between text-xs">
+                      <span className="font-bold text-amber-800">قيد الانتظار</span>
+                      <strong className="font-mono font-black text-amber-900" dir="ltr">
+                        {formatAmount(stock.pending_orders ?? 0)}
+                      </strong>
+                    </div>
+                    <div className="rounded-xl bg-emerald-50/70 border border-emerald-200/80 px-3 py-2 flex items-center justify-between text-xs">
+                      <span className="font-bold text-emerald-800">مكتملة</span>
+                      <strong className="font-mono font-black text-emerald-900" dir="ltr">
+                        {formatAmount(stock.completed_orders ?? 0)}
+                      </strong>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <button
-                type="button"
-                onClick={() => go(ROUTES.STOCK_DASHBOARD, { stockId: stock.id })}
-                className="w-full min-h-[46px] rounded-xl bg-mawarid-700 hover:bg-mawarid-800 text-white text-sm font-bold transition shadow-md shadow-mawarid-900/15 cursor-pointer focus:outline-none focus:ring-2 focus:ring-mawarid-500 focus:ring-offset-2 flex items-center justify-center gap-2"
-              >
-                <Icons.Settings className="w-4 h-4" aria-hidden="true" />
-                <span>إدارة المخزون</span>
-              </button>
+              <div className="flex flex-col sm:flex-row items-stretch gap-2">
+                <button
+                  type="button"
+                  onClick={() => go(ROUTES.STOCK_DASHBOARD, { stockId: stock.id })}
+                  className="flex-1 min-h-[46px] rounded-xl bg-mawarid-700 hover:bg-mawarid-800 text-white text-sm font-bold transition shadow-md shadow-mawarid-900/15 cursor-pointer focus:outline-none focus:ring-2 focus:ring-mawarid-500 focus:ring-offset-2 flex items-center justify-center gap-2"
+                >
+                  <Icons.Settings className="w-4 h-4" aria-hidden="true" />
+                  <span>إدارة المخزون</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => go(ROUTES.PROVIDER_ORDERS, { stockId: stock.id })}
+                  className="min-h-[46px] px-4 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800 text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Icons.ShoppingBag className="w-4 h-4 text-mawarid-700" aria-hidden="true" />
+                  <span>الطلبات الواردة</span>
+                </button>
+              </div>
             </div>
           )
         })}

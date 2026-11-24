@@ -7,6 +7,7 @@ import { useStock } from '../hooks/useStock'
 import { formatAmount, formatDateTime, formatGazStockType, formatPrice, isSessionExpired } from '../utils'
 
 const QUICK_ACTIONS = [
+  { key: 'orders', label: 'الطلبات الواردة', hint: 'قبول وتسليم الطلبات', icon: Icons.ShoppingBag, route: ROUTES.PROVIDER_ORDERS, params: {}, tone: 'amber' },
   { key: 'in', label: 'إضافة كمية', hint: 'توريد وارد', icon: Icons.Plus, route: ROUTES.STOCK_TRANSACTION, params: { direction: 'in' }, tone: 'emerald' },
   { key: 'out', label: 'سحب كمية', hint: 'صرف منصرف', icon: Icons.Minus, route: ROUTES.STOCK_TRANSACTION, params: { direction: 'out' }, tone: 'rose' },
   { key: 'units', label: 'إدارة الوحدات', hint: 'إضافة وتعديل', icon: Icons.Settings, route: ROUTES.STOCK_UNITS, params: {}, tone: 'mawarid' },
@@ -14,6 +15,7 @@ const QUICK_ACTIONS = [
 ]
 
 const TONES = {
+  amber: 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100',
   emerald: 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100',
   rose: 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100',
   mawarid: 'bg-mawarid-50 text-mawarid-700 border-mawarid-200 hover:bg-mawarid-100',
@@ -82,6 +84,43 @@ export default function StockDashboardPage({ go, stockId }) {
             </div>
           </div>
         </div>
+
+        {/* ── عدادات الطلبات الحية لهذا المخزون (إن توفرت) ── */}
+        {(stock?.pending_orders !== undefined || stock?.completed_orders !== undefined) && (
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => go(ROUTES.PROVIDER_ORDERS, { stockId: stock.id })}
+              className="rounded-2xl border border-amber-200 bg-white p-4 shadow-xs flex items-center justify-between text-right hover:border-amber-400 transition cursor-pointer"
+            >
+              <div>
+                <p className="text-xs font-bold text-slate-500">طلبات قيد الانتظار</p>
+                <p className="mt-1 text-2xl font-black text-amber-700 font-mono" dir="ltr">
+                  {formatAmount(stock.pending_orders ?? 0)}
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                <Icons.Clock className="w-5 h-5" />
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => go(ROUTES.PROVIDER_ORDERS, { stockId: stock.id })}
+              className="rounded-2xl border border-emerald-200 bg-white p-4 shadow-xs flex items-center justify-between text-right hover:border-emerald-400 transition cursor-pointer"
+            >
+              <div>
+                <p className="text-xs font-bold text-slate-500">طلبات مكتملة</p>
+                <p className="mt-1 text-2xl font-black text-emerald-700 font-mono" dir="ltr">
+                  {formatAmount(stock.completed_orders ?? 0)}
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                <Icons.Check className="w-5 h-5" />
+              </div>
+            </button>
+          </div>
+        )}
 
         {/* ── أرصدة جميع الوحدات (من الخادم دون حسابات محلية) ── */}
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
