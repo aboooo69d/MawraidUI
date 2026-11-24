@@ -75,3 +75,29 @@ describe('resolveCurrentScreen — consumer stocks discovery role restrictions',
     }
   })
 })
+
+describe('resolveCurrentScreen — consumer orders role restrictions', () => {
+  const admin = { role_name: 'admin' }
+
+  it('يسمح للمستفيد فقط بالوصول لشاشات الطلبات ويمنع الإدارة والمزود والزائر', () => {
+    for (const route of [ROUTES.CONSUMER_ORDERS, ROUTES.CONSUMER_ORDER_DETAILS]) {
+      expect(resolveCurrentScreen(route, null)).toBe(ROUTES.LOGIN)
+      expect(resolveCurrentScreen(route, consumer)).toBe(route)
+      expect(resolveCurrentScreen(route, admin)).toBe(ROUTES.DASHBOARD)
+      expect(resolveCurrentScreen(route, provider)).toBe(ROUTES.DASHBOARD)
+    }
+  })
+})
+
+describe('resolveCurrentScreen — provider orders role restrictions', () => {
+  const admin = { role_name: 'admin' }
+
+  it('يسمح للمزود فقط بالوصول لشاشات الطلبات الواردة ويمنع المستفيد والإدارة والزائر', () => {
+    for (const route of [ROUTES.PROVIDER_ORDERS, ROUTES.PROVIDER_ORDER_DETAILS]) {
+      expect(resolveCurrentScreen(route, null)).toBe(ROUTES.LOGIN)
+      expect(resolveCurrentScreen(route, provider)).toBe(route)
+      expect(resolveCurrentScreen(route, consumer)).toBe(ROUTES.DASHBOARD)
+      expect(resolveCurrentScreen(route, admin)).toBe(ROUTES.DASHBOARD)
+    }
+  })
+})

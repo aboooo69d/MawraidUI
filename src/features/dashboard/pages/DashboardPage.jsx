@@ -1,11 +1,15 @@
 // ═══════════ لوحة التحكم بعد الدخول — منصة موارد (تعز) ═══════════
+import { useState } from 'react'
 import { useAuth } from '../../auth/hooks/useAuth'
 import { Icons, BrandLogo, ResourceBadge } from '../../../shared/components/ui'
 import { ROUTES } from '../../../shared/constants/routes'
 import ProviderStockCard from '../../stock/components/ProviderStockCard'
+import ProviderOrdersSection from '../../orders/components/ProviderOrdersSection'
+import ConsumerOrdersSection from '../../orders/components/ConsumerOrdersSection'
 
-export default function Dashboard({ go }) {
+export default function Dashboard({ go, showToast, onSessionExpired }) {
   const { user, logout } = useAuth()
+  const [providerStockRefresh, setProviderStockRefresh] = useState(0)
 
   async function doLogout() {
     await logout()
@@ -79,11 +83,30 @@ export default function Dashboard({ go }) {
           </div>
         </div>
 
-        {/* ── بطاقة المخزون (للمزود فقط — لا تظهر للمستفيدين) ── */}
+        {/* ── بطاقة المخزون والطلبات الواردة (للمزود فقط — لا تظهر للمستفيدين) ── */}
         {isProvider && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-black text-slate-900">إدارة المخزون</h2>
-            <ProviderStockCard go={go} />
+          <div className="space-y-8">
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-lg font-black text-slate-900">إدارة المخزون</h2>
+                <button
+                  type="button"
+                  onClick={() => go(ROUTES.PROVIDER_ORDERS)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-mawarid-200 bg-white hover:border-mawarid-500 text-mawarid-800 text-xs font-bold transition shadow-xs cursor-pointer"
+                >
+                  <Icons.ShoppingBag className="w-4 h-4 text-mawarid-700" />
+                  <span>جميع الطلبات الواردة</span>
+                </button>
+              </div>
+              <ProviderStockCard go={go} refreshTrigger={providerStockRefresh} />
+            </div>
+
+            <ProviderOrdersSection
+              go={go}
+              showToast={showToast}
+              onSessionExpired={onSessionExpired}
+              onOrderChanged={() => setProviderStockRefresh((n) => n + 1)}
+            />
           </div>
         )}
 
@@ -104,6 +127,23 @@ export default function Dashboard({ go }) {
               <Icons.ArrowRight className="w-4 h-4 rotate-180 text-mawarid-700" />
             </button>
 
+            {isCitizen && (
+              <button
+                type="button"
+                onClick={() => go(ROUTES.CONSUMER_ORDERS)}
+                className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-start shadow-xs hover:border-mawarid-500 transition cursor-pointer sm:w-auto sm:pe-6"
+              >
+                <span className="rounded-xl bg-mawarid-50 p-2.5 text-mawarid-700">
+                  <Icons.ShoppingBag className="w-5 h-5" />
+                </span>
+                <span className="flex-1">
+                  <span className="block font-black text-slate-900">طلباتي وحجوزاتي</span>
+                  <span className="block text-xs text-slate-500">متابعة حالة الطلبات وإلغاء المعلّق منها</span>
+                </span>
+                <Icons.ArrowRight className="w-4 h-4 rotate-180 text-mawarid-700" />
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => go(isAdmin ? ROUTES.ADMIN_ADDRESSES : ROUTES.CITIZEN_ADDRESSES)}
@@ -116,6 +156,15 @@ export default function Dashboard({ go }) {
               <Icons.ArrowRight className="w-4 h-4 rotate-180 text-mawarid-700" />
             </button>
           </div>
+        )}
+
+        {/* ── طلباتي الأخيرة (للمستفيد فقط) ── */}
+        {isCitizen && (
+          <ConsumerOrdersSection
+            go={go}
+            showToast={showToast}
+            onSessionExpired={onSessionExpired}
+          />
         )}
 
         {/* بطاقات حالة الموارد والحصص */}

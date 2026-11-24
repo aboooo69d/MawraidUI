@@ -20,6 +20,10 @@ import CitizenAddressesPage from '../features/addresses/pages/CitizenAddressesPa
 import AdminAddressesPage from '../features/addresses/pages/AdminAddressesPage'
 import ConsumerStocksPage from '../features/consumer-stocks/pages/ConsumerStocksPage'
 import ConsumerStockDetailsPage from '../features/consumer-stocks/pages/ConsumerStockDetailsPage'
+import ConsumerOrdersPage from '../features/orders/pages/ConsumerOrdersPage'
+import ConsumerOrderDetailsPage from '../features/orders/pages/ConsumerOrderDetailsPage'
+import ProviderOrdersPage from '../features/orders/pages/ProviderOrdersPage'
+import ProviderOrderDetailsPage from '../features/orders/pages/ProviderOrderDetailsPage'
 
 // شاشات ميزة المخزون — متاحة لحسابات مزودي الخدمة فقط
 const STOCK_SCREENS = [
@@ -32,10 +36,14 @@ const STOCK_SCREENS = [
 
 const PROTECTED_ROLES = new Map([
   ...STOCK_SCREENS.map((screen) => [screen, ['provider']]),
+  [ROUTES.PROVIDER_ORDERS, ['provider']],
+  [ROUTES.PROVIDER_ORDER_DETAILS, ['provider']],
   [ROUTES.CITIZEN_ADDRESSES, ['consumer']],
   [ROUTES.ADMIN_ADDRESSES, ['admin']],
   [ROUTES.CONSUMER_STOCKS, ['consumer', 'admin']],
   [ROUTES.CONSUMER_STOCK_DETAILS, ['consumer', 'admin']],
+  [ROUTES.CONSUMER_ORDERS, ['consumer']],
+  [ROUTES.CONSUMER_ORDER_DETAILS, ['consumer']],
 ])
 
 export function resolveCurrentScreen(screen, user) {
@@ -80,7 +88,13 @@ function Shell() {
     [ROUTES.OTP]: <OtpPage go={go} phone={params.phone} />,
     [ROUTES.FORGOT_PASSWORD]: <Forgot go={go} />,
     [ROUTES.RESET_PASSWORD]: <Reset go={go} phone={params.phone} />,
-    [ROUTES.DASHBOARD]: <DashboardPage go={go} />,
+    [ROUTES.DASHBOARD]: (
+      <DashboardPage
+        go={go}
+        showToast={showToast}
+        onSessionExpired={onAddressSessionExpired}
+      />
+    ),
     [ROUTES.CITIZEN_ADDRESSES]: <CitizenAddressesPage go={go} showToast={showToast} onSessionExpired={onAddressSessionExpired} />,
     [ROUTES.ADMIN_ADDRESSES]: <AdminAddressesPage go={go} onSessionExpired={onAddressSessionExpired} />,
     [ROUTES.CONSUMER_STOCKS]: <ConsumerStocksPage go={go} onSessionExpired={onAddressSessionExpired} />,
@@ -92,12 +106,49 @@ function Shell() {
         onSessionExpired={onAddressSessionExpired}
       />
     ),
-    // ── ميزة المخزون (provider only) ──
+    [ROUTES.CONSUMER_ORDERS]: (
+      <ConsumerOrdersPage
+        go={go}
+        initialStockId={params.stockId}
+        initialStockName={params.stockName}
+        showToast={showToast}
+        onSessionExpired={onAddressSessionExpired}
+      />
+    ),
+    [ROUTES.CONSUMER_ORDER_DETAILS]: (
+      <ConsumerOrderDetailsPage
+        go={go}
+        orderId={params.orderId}
+        backTo={params.backTo}
+        backParams={params.backParams}
+        showToast={showToast}
+        onSessionExpired={onAddressSessionExpired}
+      />
+    ),
+    // ── ميزة المخزون والطلبات الواردة (provider only) ──
     [ROUTES.STOCK_CREATE]: <StockCreatePage go={go} showToast={showToast} />,
     [ROUTES.STOCK_DASHBOARD]: <StockDashboardPage go={go} showToast={showToast} stockId={params.stockId} />,
     [ROUTES.STOCK_TRANSACTION]: <StockTransactionPage go={go} showToast={showToast} stockId={params.stockId} direction={params.direction} />,
     [ROUTES.STOCK_UNITS]: <StockUnitsPage go={go} showToast={showToast} stockId={params.stockId} />,
     [ROUTES.STOCK_HISTORY]: <StockHistoryPage go={go} showToast={showToast} stockId={params.stockId} />,
+    [ROUTES.PROVIDER_ORDERS]: (
+      <ProviderOrdersPage
+        go={go}
+        initialStockId={params.stockId}
+        showToast={showToast}
+        onSessionExpired={onAddressSessionExpired}
+      />
+    ),
+    [ROUTES.PROVIDER_ORDER_DETAILS]: (
+      <ProviderOrderDetailsPage
+        go={go}
+        orderId={params.orderId}
+        backTo={params.backTo}
+        backParams={params.backParams}
+        showToast={showToast}
+        onSessionExpired={onAddressSessionExpired}
+      />
+    ),
   }
 
   const current = resolveCurrentScreen(screen, user)
