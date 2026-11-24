@@ -1,4 +1,5 @@
 // ═══════════ شاشة تفاصيل المخزون للمستفيد مع الموقع على الخريطة وزر إنشاء الطلب ═══════════
+import { useState } from 'react'
 import { useAuth } from '../../auth/hooks/useAuth'
 import { BackBtn, ErrorBanner, Icons, PrimaryBtn, SecondaryBtn } from '../../../shared/components/ui'
 import LocationPicker from '../../../shared/components/ui/LocationPicker'
@@ -7,6 +8,7 @@ import { useConsumerStockDetails } from '../hooks/useConsumerStockDetails'
 import { formatAmount, formatDateTime, formatGazStockType, formatPrice } from '../utils/format'
 import { isValidCoords } from '../utils/geo'
 import { StockTypeIcon } from '../components/ConsumerStockCard'
+import CreateOrderSheet from '../../orders/components/CreateOrderSheet'
 
 export default function ConsumerStockDetailsPage({
   go,
@@ -17,6 +19,8 @@ export default function ConsumerStockDetailsPage({
 }) {
   const { user } = useAuth()
   const isConsumer = user?.role_name === 'consumer'
+  const [orderSheet, setOrderSheet] = useState({ open: false, unitId: null })
+  const [createdOrder, setCreatedOrder] = useState(null)
 
   const {
     stock,
@@ -40,13 +44,20 @@ export default function ConsumerStockDetailsPage({
 
   const hasValidLocation = isValidCoords(stock?.location)
 
-  function handleCreateOrder() {
-    if (!stock || !isAvailable) return
+  function handleCreateOrder(preselectedUnitId = null) {
+    if (!stock || !isAvailable || !isConsumer) return
     if (typeof onCreateOrder === 'function') {
-      onCreateOrder(stock)
+      onCreateOrder(stock, preselectedUnitId)
       return
     }
-    showToast?.('ميزة إنشاء الطلب قيد التطوير وستتوفر قريباً.', true)
+    setOrderSheet({ open: true, unitId: preselectedUnitId })
+  }
+
+  function handleOrderCreated(order) {
+    setOrderSheet({ open: false, unitId: null })
+    setCreatedOrder(order)
+    showToast?.(`تم إنشاء الطلب بنجاح (${order.order_number})`, true)
+    reload()
   }
 
   return (
@@ -101,6 +112,49 @@ export default function ConsumerStockDetailsPage({
           </div>
         ) : (
           <>
+            {/* شريط تأكيد الطلب المنشأ حديثاً */}
+            {createdOrder && (
+              <section className="rounded-2xl border border-emerald-200 bg-emerald-50/90 p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 fade-in">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                    <Icons.Check className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-0.5">
+                    <h2 className="text-sm font-black text-emerald-950">
+                      تم حجز طلبك بنجاح — <span className="font-mono" dir="ltr">{createdOrder.order_number}</span>
+                    </h2>
+                    <p className="text-xs text-emerald-800">
+                      الكمية: <strong className="font-mono" dir="ltr">{formatAmount(createdOrder.quantity)}</strong> {createdOrder.unit_name} • الإجمالي:{' '}
+                      <strong className="font-mono" dir="ltr">{formatPrice(createdOrder.total_price)}</strong> ريال
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      go(ROUTES.CONSUMER_ORDER_DETAILS, {
+                        orderId: createdOrder.id,
+                        backTo: ROUTES.CONSUMER_STOCK_DETAILS,
+                        backParams: { stockId: stock.id },
+                      })
+                    }
+                    className="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition cursor-pointer"
+                  >
+                    عرض تفاصيل الطلب
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => go(ROUTES.CONSUMER_ORDERS)}
+                    className="px-3 py-2 rounded-xl border border-emerald-300 bg-white hover:bg-emerald-50 text-emerald-800 text-xs font-bold transition cursor-pointer"
+                  >
+                    كل طلباتي
+                  </button>
+                </div>
+              </section>
+            )}
+
             {/* 1) بطاقة الملخص الرئيسية + زر إنشاء الطلب */}
             <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -189,15 +243,37 @@ export default function ConsumerStockDetailsPage({
                   </div>
                 </div>
 
-                <div className="sm:min-w-[220px]">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:min-w-[260px]">
+                  {isConsumer && (
+                    <SecondaryBtn
+                      type="button"
+                      onClick={() =>
+                        go(ROUTES.CONSUMER_ORDERS, {
+                          stockId: stock.id,
+                          stockName: stock.type?.name || '',
+                        })
+                      }
+                      className="min-h-[50px] flex items-center justify-center gap-1.5 text-xs"
+                    >
+                      <Icons.FileText className="w-4 h-4 text-mawarid-700" />
+                      <span>طلباتي هنا</span>
+                    </SecondaryBtn>
+                  )}
+
                   <PrimaryBtn
                     type="button"
-                    onClick={handleCreateOrder}
-                    disabled={!isAvailable}
-                    className="w-full"
+                    onClick={() => handleCreateOrder(null)}
+                    disabled={!isAvailable || !isConsumer}
+                    className="!mt-0 flex-1 sm:min-w-[190px]"
                   >
                     <Icons.Plus className="w-4 h-4" />
-                    <span>{isAvailable ? 'إنشاء طلب' : 'غير متاح للطلب حالياً'}</span>
+                    <span>
+                      {!isConsumer
+                        ? 'متاح لحسابات المستفيدين فقط'
+                        : isAvailable
+                        ? 'إنشاء طلب جديد'
+                        : 'غير متاح للطلب حالياً'}
+                    </span>
                   </PrimaryBtn>
                 </div>
               </div>
@@ -299,6 +375,19 @@ export default function ConsumerStockDetailsPage({
                             </span>
                           )}
                         </div>
+
+                        {isConsumer && unitAmount > 0 && (
+                          <div className="pt-1">
+                            <button
+                              type="button"
+                              onClick={() => handleCreateOrder(unit.id)}
+                              className="w-full py-2 px-3 rounded-xl bg-white hover:bg-mawarid-50 border border-slate-200 hover:border-mawarid-300 text-mawarid-800 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                            >
+                              <Icons.ShoppingBag className="w-3.5 h-3.5" />
+                              <span>طلب {unit.name}</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )
                   })}
@@ -369,6 +458,19 @@ export default function ConsumerStockDetailsPage({
           </>
         )}
       </main>
+
+      {isConsumer && (
+        <CreateOrderSheet
+          open={orderSheet.open}
+          stock={stock}
+          initialUnitId={orderSheet.unitId}
+          defaultAddress={defaultAddress}
+          onClose={() => setOrderSheet({ open: false, unitId: null })}
+          onSuccess={handleOrderCreated}
+          onManageAddresses={() => go(ROUTES.CITIZEN_ADDRESSES)}
+          onSessionExpired={onSessionExpired}
+        />
+      )}
     </div>
   )
 }
