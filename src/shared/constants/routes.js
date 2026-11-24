@@ -12,10 +12,15 @@ export const ROUTES = {
   // ── استكشاف المخزون للمستفيدين والإدارة ──
   CONSUMER_STOCKS: 'consumer-stocks',
   CONSUMER_STOCK_DETAILS: 'consumer-stock-details',
-  // ── ميزة المخزون (للمزود فقط) ──
+  // ── طلبات المستفيدين (للمستفيد فقط) ──
+  CONSUMER_ORDERS: 'consumer-orders',
+  CONSUMER_ORDER_DETAILS: 'consumer-order-details',
+  // ── ميزة المخزون والطلبات الواردة (للمزود فقط) ──
   STOCK_CREATE: 'stock-create',
   STOCK_DASHBOARD: 'stock-dashboard',
   STOCK_TRANSACTION: 'stock-transaction',
   STOCK_UNITS: 'stock-units',
   STOCK_HISTORY: 'stock-history',
+  PROVIDER_ORDERS: 'provider-orders',
+  PROVIDER_ORDER_DETAILS: 'provider-order-details',
 }
