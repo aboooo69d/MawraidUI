@@ -46,12 +46,13 @@ describe('StockUnitsPage — إضافة وحدة فرعية', () => {
     await screen.findByText('إضافة وحدة فرعية جديدة')
     fireEvent.change(screen.getByPlaceholderText('مثال: طرد'), { target: { value: 'طرد' } })
     fireEvent.change(screen.getByPlaceholderText('مثال: 24'), { target: { value: '24' } })
+    fireEvent.change(screen.getByPlaceholderText('مثال: 70000'), { target: { value: '150000' } })
     fireEvent.click(screen.getByText('إضافة الوحدة'))
 
     await waitFor(() => expect(calls.filter((c) => c.method === 'POST').length).toBe(1))
     const post = calls.find((c) => c.method === 'POST')
     expect(post.url).toBe(`/api/v1/stocks/me/${STOCK.id}/units`)
-    expect(post.body).toEqual({ name: 'طرد', rate: 24, is_main: false })
+    expect(post.body).toEqual({ name: 'طرد', rate: 24, price: 150000, is_main: false })
 
     // تحديث المخزون بعد النجاح
     await waitFor(() =>
@@ -68,6 +69,7 @@ describe('StockUnitsPage — إضافة وحدة فرعية', () => {
     await screen.findByText('إضافة وحدة فرعية جديدة')
     fireEvent.change(screen.getByPlaceholderText('مثال: طرد'), { target: { value: 'طرد' } })
     fireEvent.change(screen.getByPlaceholderText('مثال: 24'), { target: { value: '24' } })
+    fireEvent.change(screen.getByPlaceholderText('مثال: 70000'), { target: { value: '150000' } })
     fireEvent.click(screen.getByText('إضافة الوحدة'))
 
     expect(await screen.findByText('يوجد وحدة أخرى بنفس الاسم في هذا المخزون')).toBeTruthy()
@@ -81,6 +83,7 @@ describe('StockUnitsPage — إضافة وحدة فرعية', () => {
     await screen.findByText('إضافة وحدة فرعية جديدة')
     fireEvent.change(screen.getByPlaceholderText('مثال: طرد'), { target: { value: 'حبة' } })
     fireEvent.change(screen.getByPlaceholderText('مثال: 24'), { target: { value: '24' } })
+    fireEvent.change(screen.getByPlaceholderText('مثال: 70000'), { target: { value: '150000' } })
     fireEvent.click(screen.getByText('إضافة الوحدة'))
 
     expect(await screen.findByText('يوجد وحدة أخرى بنفس الاسم في هذا المخزون')).toBeTruthy()

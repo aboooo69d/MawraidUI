@@ -8,6 +8,7 @@ import { StockLoading, StockErrorState, SessionExpiredState, StockEmptyState } f
 import { useStock } from '../hooks/useStock'
 import { isSessionExpired } from '../utils'
 import { UNIT_NAME_MAX, validateUnitForm } from '../validation'
+import { formatPrice } from '../utils'
 
 export default function StockUnitsPage({ go, showToast, stockId }) {
   const { status, stock, err, reload } = useStock(stockId)
@@ -15,12 +16,13 @@ export default function StockUnitsPage({ go, showToast, stockId }) {
   // نموذج إضافة وحدة فرعية
   const [addName, setAddName] = useState('')
   const [addRate, setAddRate] = useState('')
+  const [addPrice, setAddPrice] = useState('')
   const [addErrors, setAddErrors] = useState({})
   const [addServerErr, setAddServerErr] = useState(null)
   const [adding, setAdding] = useState(false)
 
   // نموذج تعديل وحدة قائمة
-  const [editing, setEditing] = useState(null) // { id, name, rate }
+  const [editing, setEditing] = useState(null) // { id, name, rate, price }
   const [editErrors, setEditErrors] = useState({})
   const [editServerErr, setEditServerErr] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -33,7 +35,13 @@ export default function StockUnitsPage({ go, showToast, stockId }) {
   async function addUnit(e) {
     if (e) e.preventDefault()
     setAddServerErr(null)
-    const check = validateUnitForm({ name: addName, rate: addRate, units })
+    const check = validateUnitForm({
+      name: addName,
+      rate: addRate,
+      price: addPrice,
+      units,
+      requirePrice: true,
+    })
     setAddErrors(check.errors)
     if (!check.valid || adding) return
 
@@ -42,11 +50,13 @@ export default function StockUnitsPage({ go, showToast, stockId }) {
       await stockApi.addStockUnit(stock.id, {
         name: check.name,
         rate: Number(addRate),
+        price: Number(addPrice),
         is_main: false,
       })
       showToast?.('تمت إضافة الوحدة بنجاح')
       setAddName('')
       setAddRate('')
+      setAddPrice('')
       setAddErrors({})
       reload() // تحديث الوحدات والأرصدة من الخادم
     } catch (e2) {
@@ -59,7 +69,12 @@ export default function StockUnitsPage({ go, showToast, stockId }) {
 
   // ── تعديل وحدة ──
   function startEdit(u) {
-    setEditing({ id: u.id, name: u.name, rate: String(u.rate) })
+    setEditing({
+      id: u.id,
+      name: u.name,
+      rate: String(u.rate),
+      price: u.price !== undefined && u.price !== null ? String(u.price) : '',
+    })
     setEditErrors({})
     setEditServerErr(null)
   }
@@ -73,9 +88,11 @@ export default function StockUnitsPage({ go, showToast, stockId }) {
     const check = validateUnitForm({
       name: editing.name,
       rate: editing.rate,
+      price: editing.price,
       units,
       excludeId: unit.id,
       isMain,
+      requirePrice: false,
     })
     setEditErrors(check.errors)
     if (!check.valid) return
@@ -84,6 +101,9 @@ export default function StockUnitsPage({ go, showToast, stockId }) {
     const payload = {}
     if (check.name !== unit.name) payload.name = check.name
     if (!isMain && Number(editing.rate) !== Number(unit.rate)) payload.rate = Number(editing.rate)
+    if (editing.price !== '' && Number(editing.price) !== Number(unit.price)) {
+      payload.price = Number(editing.price)
+    }
     if (Object.keys(payload).length === 0) {
       setEditing(null)
       return
@@ -99,11 +119,14 @@ export default function StockUnitsPage({ go, showToast, stockId }) {
     } catch (e2) {
       if (isSessionExpired(e2)) {
         setSessionExpired(true)
-      } else if (e2?.code === 1610 && payload.name && payload.rate !== undefined) {
-        // تعديل المعامل مرفوض (وحدة مستخدمة سابقاً) — نسمح بالاسم فقط كما يسمح الخادم
+      } else if (e2?.code === 1610 && (payload.name || payload.price !== undefined) && payload.rate !== undefined) {
+        // تعديل المعامل مرفوض (وحدة مستخدمة سابقاً) — نحاول بالاسم و/أو السعر اللذين يسمح بهما الخادم
         try {
-          await stockApi.updateStockUnit(stock.id, unit.id, { name: payload.name })
-          showToast?.('تم تعديل الاسم — لا يمكن تغيير معامل وحدة مستخدمة سابقاً')
+          const retryPayload = {}
+          if (payload.name) retryPayload.name = payload.name
+          if (payload.price !== undefined) retryPayload.price = payload.price
+          await stockApi.updateStockUnit(stock.id, unit.id, retryPayload)
+          showToast?.('تم حفظ التعديل — لا يمكن تغيير معامل وحدة مستخدمة سابقاً')
           setEditing(null)
           reload()
         } catch (e3) {
@@ -150,7 +173,7 @@ export default function StockUnitsPage({ go, showToast, stockId }) {
                   <li key={u.id} className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5">
                     {isEditing ? (
                       <div className="space-y-3">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           <div>
                             <Label req htmlFor={`edit-name-${u.id}`}>اسم الوحدة</Label>
                             <TextInput
@@ -180,6 +203,21 @@ export default function StockUnitsPage({ go, showToast, stockId }) {
                             ) : (
                               editErrors.rate && <p className="text-[12px] font-bold text-rose-600 mt-1.5">{editErrors.rate}</p>
                             )}
+                          </div>
+                          <div>
+                            <Label htmlFor={`edit-price-${u.id}`}>سعر الوحدة</Label>
+                            <TextInput
+                              id={`edit-price-${u.id}`}
+                              value={editing.price}
+                              onChange={(v) => setEditing((s) => ({ ...s, price: v }))}
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              dir="ltr"
+                              placeholder="مثال: 7500"
+                              error={!!editErrors.price}
+                            />
+                            {editErrors.price && <p className="text-[12px] font-bold text-rose-600 mt-1.5">{editErrors.price}</p>}
                           </div>
                         </div>
                         {editServerErr && <ErrorBanner err={editServerErr} />}
@@ -219,9 +257,17 @@ export default function StockUnitsPage({ go, showToast, stockId }) {
                               </span>
                             )}
                           </div>
-                          <p className="text-[11px] text-slate-500 mt-1">
-                            معامل التحويل:{' '}
-                            <strong className="font-mono text-slate-700" dir="ltr">{isMain ? 1 : u.rate}</strong>
+                          <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-3 flex-wrap">
+                            <span>
+                              معامل التحويل:{' '}
+                              <strong className="font-mono text-slate-700" dir="ltr">{isMain ? 1 : u.rate}</strong>
+                            </span>
+                            {u.price !== undefined && u.price !== null && (
+                              <span>
+                                السعر:{' '}
+                                <strong className="font-mono text-slate-700" dir="ltr">{formatPrice(u.price)}</strong>
+                              </span>
+                            )}
                           </p>
                         </div>
                         <SecondaryBtn onClick={() => startEdit(u)} className="shrink-0">
@@ -245,7 +291,7 @@ export default function StockUnitsPage({ go, showToast, stockId }) {
           {/* ── إضافة وحدة فرعية ── */}
           <form onSubmit={addUnit} className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-xs space-y-3" noValidate>
             <h2 className="text-sm font-black text-slate-900">إضافة وحدة فرعية جديدة</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <Label req htmlFor="new-unit-name">اسم الوحدة</Label>
                 <TextInput
@@ -270,6 +316,21 @@ export default function StockUnitsPage({ go, showToast, stockId }) {
                   error={!!addErrors.rate}
                 />
                 {addErrors.rate && <p className="text-[12px] font-bold text-rose-600 mt-1.5">{addErrors.rate}</p>}
+              </div>
+              <div>
+                <Label req htmlFor="new-unit-price">سعر الوحدة</Label>
+                <TextInput
+                  id="new-unit-price"
+                  value={addPrice}
+                  onChange={(v) => setAddPrice(v)}
+                  placeholder="مثال: 70000"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  dir="ltr"
+                  error={!!addErrors.price}
+                />
+                {addErrors.price && <p className="text-[12px] font-bold text-rose-600 mt-1.5">{addErrors.price}</p>}
               </div>
             </div>
             {addServerErr && <ErrorBanner err={addServerErr} />}

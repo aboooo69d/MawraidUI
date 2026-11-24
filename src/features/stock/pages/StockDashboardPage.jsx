@@ -4,7 +4,7 @@ import { Icons } from '../../../shared/components/ui'
 import StockPage from '../components/StockPage'
 import { StockLoading, StockErrorState, SessionExpiredState, StockEmptyState } from '../components/StockStates'
 import { useStock } from '../hooks/useStock'
-import { formatAmount, formatDateTime, formatGazStockType, isSessionExpired } from '../utils'
+import { formatAmount, formatDateTime, formatGazStockType, formatPrice, isSessionExpired } from '../utils'
 
 const QUICK_ACTIONS = [
   { key: 'in', label: 'إضافة كمية', hint: 'توريد وارد', icon: Icons.Plus, route: ROUTES.STOCK_TRANSACTION, params: { direction: 'in' }, tone: 'emerald' },
@@ -88,12 +88,20 @@ export default function StockDashboardPage({ go, stockId }) {
           <h3 className="text-sm font-black text-slate-900 mb-3">الأرصدة بكل الوحدات</h3>
           {balances.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {balances.map((b) => (
-                <div key={b.unit_id} className="rounded-xl bg-slate-50 border border-slate-100 p-3 text-center">
-                  <div className="text-lg font-black text-slate-900 font-mono" dir="ltr">{formatAmount(b.amount)}</div>
-                  <div className="text-[11px] font-bold text-slate-500 mt-0.5">{b.unit}</div>
-                </div>
-              ))}
+              {balances.map((b) => {
+                const unitObj = stock?.units?.find((u) => u.id === b.unit_id || u.name === b.unit)
+                return (
+                  <div key={b.unit_id} className="rounded-xl bg-slate-50 border border-slate-100 p-3 text-center">
+                    <div className="text-lg font-black text-slate-900 font-mono" dir="ltr">{formatAmount(b.amount)}</div>
+                    <div className="text-[11px] font-bold text-slate-500 mt-0.5">{b.unit}</div>
+                    {unitObj?.price !== undefined && unitObj?.price !== null && (
+                      <div className="text-[11px] font-bold text-mawarid-700 mt-1">
+                        السعر: <span className="font-mono" dir="ltr">{formatPrice(unitObj.price)}</span>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           ) : (
             <p className="text-xs text-slate-400">لا توجد أرصدة مسجلة بعد.</p>

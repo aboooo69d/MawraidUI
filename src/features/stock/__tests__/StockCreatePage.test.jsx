@@ -34,9 +34,11 @@ const fillCommonFields = async (typeId = '1') => {
   fireEvent.change(screen.getByLabelText(/خط العرض/), { target: { value: '13.5795' } })
   fireEvent.change(screen.getByLabelText(/خط الطول/), { target: { value: '44.0209' } })
   fireEvent.change(screen.getByPlaceholderText('مثال: حبة'), { target: { value: 'اسطوانة' } })
+  fireEvent.change(screen.getByPlaceholderText('مثال: 7500'), { target: { value: '7500' } })
   fireEvent.click(screen.getByText('إضافة وحدة فرعية'))
   fireEvent.change(screen.getByPlaceholderText('مثال: كرتون'), { target: { value: 'شبك' } })
   fireEvent.change(screen.getByPlaceholderText('مثال: 12'), { target: { value: '10' } })
+  fireEvent.change(screen.getByPlaceholderText('مثال: 70000'), { target: { value: '70000' } })
 }
 
 describe('StockCreatePage — التحقق والإنشاء', () => {
@@ -73,8 +75,8 @@ describe('StockCreatePage — التحقق والإنشاء', () => {
       address: 'تعز - شارع جمال بجانب جولة المسبح',
       location: { lat: 13.5795, lng: 44.0209 },
       units: [
-        { name: 'اسطوانة', rate: 1, is_main: true },
-        { name: 'شبك', rate: 10, is_main: false },
+        { name: 'اسطوانة', rate: 1, price: 7500, is_main: true },
+        { name: 'شبك', rate: 10, price: 70000, is_main: false },
       ],
       stock_details: { gaz_stock_type: 'exchange' },
     })
@@ -126,25 +128,23 @@ describe('StockCreatePage — التحقق والإنشاء', () => {
 })
 
 
-it('يحفظ اختيار الخريطة حتى لو وصل رد GPS بعد إلغاء المراقبة', async () => {
-  const watchPosition = vi.fn().mockReturnValueOnce(1).mockReturnValueOnce(2)
-  const clearWatch = vi.fn()
-  vi.stubGlobal('navigator', { geolocation: { watchPosition, clearWatch } })
+it('يحفظ اختيار الخريطة حتى لو وصل رد GPS بعد اختيار نقطة يدوياً', async () => {
+  const getCurrentPosition = vi.fn()
+  vi.stubGlobal('navigator', { geolocation: { getCurrentPosition } })
   const { calls } = stubTypes()
   const go = vi.fn()
   renderWithAuth(<StockCreatePage go={go} showToast={vi.fn()} />)
   await fillCommonFields('2')
-  const watch = screen.getByRole('button', { name: /تحديد موقعي الحالي/ })
-  fireEvent.click(watch)
-  expect(watchPosition).toHaveBeenCalledTimes(2)
+  const locateBtn = screen.getByRole('button', { name: /استخدام موقعي الحالي/ })
+  fireEvent.click(locateBtn)
+  expect(getCurrentPosition).toHaveBeenCalledTimes(1)
   fireEvent.click(screen.getByRole('button', { name: 'اختيار نقطة على الخريطة' }))
 
-  const [onPosition] = watchPosition.mock.calls[1]
-  act(() => onPosition({ coords: { latitude: 12, longitude: 45, accuracy: 10 } }))
+  const [onPosition] = getCurrentPosition.mock.calls[0]
+  act(() => onPosition({ coords: { latitude: 12, longitude: 45 } }))
   fireEvent.click(screen.getByRole('button', { name: 'إنشاء المخزون' }))
 
   await waitFor(() => expect(go).toHaveBeenCalledWith(ROUTES.STOCK_DASHBOARD, { stockId: 'new-stock-1' }))
-  expect(clearWatch).toHaveBeenCalledWith(2)
   expect(calls.find((call) => call.method === 'POST').body.location).toEqual({ lat: 0, lng: 44.123456 })
 })
 

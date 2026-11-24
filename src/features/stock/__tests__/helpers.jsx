@@ -27,8 +27,8 @@ export const STOCK = {
   type: { id: 1, name: 'غاز منزلي', slug: 'gaz', provider_type_id: 1 },
   stock_details: { gaz_stock_type: 'exchange' },
   units: [
-    { id: 10, name: 'حبة', rate: 1, is_main: true },
-    { id: 11, name: 'كرتون', rate: 12, is_main: false },
+    { id: 10, name: 'حبة', rate: 1, price: 7500, is_main: true },
+    { id: 11, name: 'كرتون', rate: 12, price: 90000, is_main: false },
   ],
   balances: [
     { unit_id: 10, unit: 'حبة', amount: 120 },
@@ -46,7 +46,7 @@ export const STOCK_WATER = {
   location: { lat: 13.5811, lng: 44.0152 },
   type: { id: 2, name: 'مياه', slug: 'water', provider_type_id: 1 },
   stock_details: null,
-  units: [{ id: 20, name: 'لتر', rate: 1, is_main: true }],
+  units: [{ id: 20, name: 'لتر', rate: 1, price: 1200, is_main: true }],
   balances: [{ unit_id: 20, unit: 'لتر', amount: 3000 }],
   user_id: '11111111-2222-3333-4444-555555555555',
   created_at: '2026-11-22T07:00:00Z',

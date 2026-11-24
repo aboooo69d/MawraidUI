@@ -3,7 +3,7 @@
 import { ROUTES } from '../../../shared/constants/routes'
 import { Icons } from '../../../shared/components/ui'
 import { useMyStocks } from '../hooks/useMyStocks'
-import { formatAmount, formatDateTime, formatGazStockType, isSessionExpired } from '../utils'
+import { formatAmount, formatDateTime, formatGazStockType, formatPrice, isSessionExpired } from '../utils'
 import { StockLoading, StockErrorState, SessionExpiredState, StockEmptyState } from './StockStates'
 
 export default function ProviderStockCard({ go }) {
@@ -78,17 +78,25 @@ export default function ProviderStockCard({ go }) {
 
                 {balances.length > 0 && (
                   <div className="flex flex-wrap gap-2 pb-4">
-                    {balances.map((b) => (
-                      <span
-                        key={b.unit_id}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700"
-                      >
-                        <strong className="font-mono text-slate-900" dir="ltr">
-                          {formatAmount(b.amount)}
-                        </strong>
-                        <span>{b.unit}</span>
-                      </span>
-                    ))}
+                    {balances.map((b) => {
+                      const unitObj = stock?.units?.find((u) => u.id === b.unit_id || u.name === b.unit)
+                      return (
+                        <span
+                          key={b.unit_id}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700"
+                        >
+                          <strong className="font-mono text-slate-900" dir="ltr">
+                            {formatAmount(b.amount)}
+                          </strong>
+                          <span>{b.unit}</span>
+                          {unitObj?.price !== undefined && unitObj?.price !== null && (
+                            <span className="text-mawarid-700 font-normal text-[11px]">
+                              (<strong className="font-mono" dir="ltr">{formatPrice(unitObj.price)}</strong>)
+                            </span>
+                          )}
+                        </span>
+                      )
+                    })}
                   </div>
                 )}
               </div>

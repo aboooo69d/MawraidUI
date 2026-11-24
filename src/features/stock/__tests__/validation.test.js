@@ -46,8 +46,8 @@ describe('validateCreateForm — إنشاء مخزون متعدد الحقول',
   const gazType = { id: 1, name: 'غاز منزلي', slug: 'gaz', provider_type_id: 1 }
   const waterType = { id: 2, name: 'مياه', slug: 'water', provider_type_id: 1 }
   const validAddress = 'تعز - شارع جمال بجانب جولة المسبح'
-  const main = { name: 'حبة', rate: '1', is_main: true }
-  const second = { name: 'كرتون', rate: '12', is_main: false }
+  const main = { name: 'حبة', rate: '1', price: '7500', is_main: true }
+  const second = { name: 'كرتون', rate: '12', price: '90000', is_main: false }
 
   it('accepts a valid gas form (مع gazStockType)', () => {
     const r = validateCreateForm({
@@ -154,7 +154,7 @@ describe('validateCreateForm — إنشاء مخزون متعدد الحقول',
         address: validAddress,
         lat: '13.5',
         lng: '44.0',
-        units: [main, { name: 'صندوق', rate: '1', is_main: true }],
+        units: [main, { name: 'صندوق', rate: '1', price: '5000', is_main: true }],
       }).formError
     ).toContain('وحدة رئيسية واحدة')
   })
@@ -166,7 +166,7 @@ describe('validateCreateForm — إنشاء مخزون متعدد الحقول',
         address: validAddress,
         lat: '13.5',
         lng: '44.0',
-        units: [main, { name: 'حبة', rate: '5', is_main: false }],
+        units: [main, { name: 'حبة', rate: '5', price: '1000', is_main: false }],
       }).rowErrors[1]
     ).toContain('مكرر')
 
@@ -176,9 +176,41 @@ describe('validateCreateForm — إنشاء مخزون متعدد الحقول',
         address: validAddress,
         lat: '13.5',
         lng: '44.0',
-        units: [main, { name: 'a'.repeat(UNIT_NAME_MAX + 1), rate: '2', is_main: false }],
+        units: [main, { name: 'a'.repeat(UNIT_NAME_MAX + 1), rate: '2', price: '1000', is_main: false }],
       }).rowErrors[1]
     ).toBeTruthy()
+  })
+
+  it('rejects missing, zero, or negative price in create form', () => {
+    expect(
+      validateCreateForm({
+        selectedType: waterType,
+        address: validAddress,
+        lat: '13.5',
+        lng: '44.0',
+        units: [{ name: 'حبة', rate: '1', price: '', is_main: true }],
+      }).rowErrors[0]
+    ).toContain('سعر الوحدة مطلوب')
+
+    expect(
+      validateCreateForm({
+        selectedType: waterType,
+        address: validAddress,
+        lat: '13.5',
+        lng: '44.0',
+        units: [{ name: 'حبة', rate: '1', price: '0', is_main: true }],
+      }).rowErrors[0]
+    ).toContain('أكبر من صفر')
+
+    expect(
+      validateCreateForm({
+        selectedType: waterType,
+        address: validAddress,
+        lat: '13.5',
+        lng: '44.0',
+        units: [{ name: 'حبة', rate: '1', price: '-50', is_main: true }],
+      }).rowErrors[0]
+    ).toContain('أكبر من صفر')
   })
 })
 
@@ -204,13 +236,24 @@ describe('validateTransaction — حركات المخزون', () => {
 
 describe('validateUnitForm — إدارة الوحدات', () => {
   const units = [
-    { id: 10, name: 'حبة', rate: 1, is_main: true },
-    { id: 11, name: 'كرتون', rate: 12, is_main: false },
+    { id: 10, name: 'حبة', rate: 1, price: 7500, is_main: true },
+    { id: 11, name: 'كرتون', rate: 12, price: 90000, is_main: false },
   ]
 
   it('accepts a new valid secondary unit and rejects duplicates', () => {
-    expect(validateUnitForm({ name: 'طرد', rate: '24', units }).valid).toBe(true)
-    expect(validateUnitForm({ name: '  كرتون ', rate: '10', units }).errors.name).toBeTruthy()
-    expect(validateUnitForm({ name: 'كرتون', rate: '15', units, excludeId: 11 }).valid).toBe(true)
+    expect(validateUnitForm({ name: 'طرد', rate: '24', price: '150000', units }).valid).toBe(true)
+    expect(validateUnitForm({ name: '  كرتون ', rate: '10', price: '80000', units }).errors.name).toBeTruthy()
+    expect(validateUnitForm({ name: 'كرتون', rate: '15', price: '100000', units, excludeId: 11 }).valid).toBe(true)
+  })
+
+  it('validates price requirements for adding vs editing', () => {
+    // إضافة: السعر إلزامي > 0
+    expect(validateUnitForm({ name: 'طرد', rate: '24', price: '', units, requirePrice: true }).errors.price).toBeTruthy()
+    expect(validateUnitForm({ name: 'طرد', rate: '24', price: '0', units, requirePrice: true }).errors.price).toBeTruthy()
+
+    // تعديل: السعر اختياري ولكن إذا تم إدخاله يجب أن يكون > 0
+    expect(validateUnitForm({ name: 'كرتون', rate: '12', price: '', units, excludeId: 11, requirePrice: false }).valid).toBe(true)
+    expect(validateUnitForm({ name: 'كرتون', rate: '12', price: '0', units, excludeId: 11, requirePrice: false }).errors.price).toBeTruthy()
+    expect(validateUnitForm({ name: 'كرتون', rate: '12', price: '85000', units, excludeId: 11, requirePrice: false }).valid).toBe(true)
   })
 })

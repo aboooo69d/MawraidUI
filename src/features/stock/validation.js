@@ -18,6 +18,13 @@ export function isPositiveInt(v) {
   return Number.isInteger(n) && n > 0
 }
 
+// رقم موجب (يقبل أعداداً عشرية حتى خانتين ويكون > 0)
+export function isPositiveNumber(v) {
+  if (v === '' || v === null || v === undefined) return false
+  const n = Number(v)
+  return Number.isFinite(n) && n > 0
+}
+
 // التحقق من صحة الإحداثيات الجغرافية (يسمح بالقيمة 0 ويرفض الفراغ أو خارج النطاق)
 export function isValidLocation(lat, lng) {
   const latStr = clean(lat)
@@ -94,9 +101,18 @@ export function validateCreateForm({
       seen.add(key)
 
       if (u.is_main) {
-        if (Number(u.rate) !== 1) rowErrors[i] = 'معامل الوحدة الرئيسية يجب أن يساوي 1'
+        if (Number(u.rate) !== 1) {
+          rowErrors[i] = 'معامل الوحدة الرئيسية يجب أن يساوي 1'
+          return
+        }
       } else if (!isPositiveInt(u.rate)) {
         rowErrors[i] = 'معامل الوحدة يجب أن يكون عدداً صحيحاً 1 على الأقل'
+        return
+      }
+
+      if (!isPositiveNumber(u.price)) {
+        rowErrors[i] = 'سعر الوحدة مطلوب ويجب أن يكون أكبر من صفر'
+        return
       }
     })
   }
@@ -142,8 +158,17 @@ export function validateTransaction({ amount, unitId, description = '', units = 
 
 // التحقق من وحدة عند الإضافة أو التعديل
 // isMain=true: المعامل ثابت 1 ولا يُعدَّل. excludeId: تجاهل الوحدة الحالية عند التحقق من التكرار.
-// يُرجع: { valid, errors: { name?, rate? } }
-export function validateUnitForm({ name, rate, units = [], excludeId = null, isMain = false }) {
+// requirePrice: هل السعر إلزامي (> 0) كما في الإضافة، أم اختياري (> 0 إن وُجد) كما في التعديل.
+// يُرجع: { valid, errors: { name?, rate?, price? } }
+export function validateUnitForm({
+  name,
+  rate,
+  price,
+  units = [],
+  excludeId = null,
+  isMain = false,
+  requirePrice = true,
+}) {
   const errors = {}
   const n = clean(name)
 
@@ -155,6 +180,16 @@ export function validateUnitForm({ name, rate, units = [], excludeId = null, isM
 
   if (!isMain && !isPositiveInt(rate)) {
     errors.rate = 'معامل الوحدة يجب أن يكون عدداً صحيحاً 1 على الأقل'
+  }
+
+  if (requirePrice) {
+    if (!isPositiveNumber(price)) {
+      errors.price = 'سعر الوحدة مطلوب ويجب أن يكون أكبر من صفر'
+    }
+  } else if (price !== undefined && price !== '' && price !== null) {
+    if (!isPositiveNumber(price)) {
+      errors.price = 'سعر الوحدة يجب أن يكون أكبر من صفر'
+    }
   }
 
   return { valid: Object.keys(errors).length === 0, errors, name: n }

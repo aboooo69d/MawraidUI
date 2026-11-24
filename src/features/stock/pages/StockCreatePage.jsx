@@ -11,7 +11,11 @@ import { ADDRESS_MAX, UNIT_NAME_MAX, isValidLocation, validateCreateForm } from 
 
 // مفتاح ثابت لكل صف وحدة (يمنع تداخل حالة الحقول عند الحذف)
 let rowSeq = 0
-const newRow = (isMain) => ({ _key: ++rowSeq, name: '', rate: isMain ? '1' : '', is_main: isMain })
+const newRow = (isMain) => ({ _key: ++rowSeq, name: '', rate: isMain ? '1' : '', price: '', is_main: isMain })
+const TAIZ_CENTER = [13.5795, 44.0209]
+
+const normalizeLongitude = (lng) =>
+  Math.abs(lng) <= 180 ? lng : lng - 360 * Math.floor((lng + 180) / 360)
 
 export default function StockCreatePage({ go, showToast }) {
   const [types, setTypes] = useState({ status: 'loading', list: [], err: null })
@@ -22,7 +26,6 @@ export default function StockCreatePage({ go, showToast }) {
   const [lng, setLng] = useState('')
   const [locating, setLocating] = useState(false)
   const [geoErr, setGeoErr] = useState(null)
-  const [accuracy, setAccuracy] = useState(null)
   const [units, setUnits] = useState(() => [newRow(true)])
   const [submitted, setSubmitted] = useState(false)
   const [serverErr, setServerErr] = useState(null)
@@ -30,12 +33,14 @@ export default function StockCreatePage({ go, showToast }) {
   const [submitting, setSubmitting] = useState(false)
 
   const typesSeq = useRef(0)
+  const gpsRequest = useRef(null)
   const mountedRef = useRef(true)
 
   useEffect(() => {
     mountedRef.current = true
     return () => {
       mountedRef.current = false
+      gpsRequest.current = null
     }
   }, [])
 
@@ -69,80 +74,58 @@ export default function StockCreatePage({ go, showToast }) {
 
   const removeUnit = (i) => setUnits((prev) => prev.filter((_, idx) => idx !== i))
 
-  const watchRef = useRef(null)
-
-  function stopWatch() {
-    const watch = watchRef.current
-    if (!watch) return
-    watchRef.current = null
-    clearTimeout(watch.timer)
-    navigator.geolocation.clearWatch?.(watch.id)
-  }
-
-  useEffect(() => stopWatch, [])
-
   function pickLocation(latitude, longitude) {
-    stopWatch()
+    if (submitting) return
+    gpsRequest.current = null
     setLocating(false)
-    setAccuracy(null)
-    setLat(String(latitude))
-    setLng(String(longitude))
     setGeoErr(null)
+    // قد تُرجع Leaflet خط طول من نسخة مجاورة للخريطة
+    const nextLng = typeof longitude === 'number' && Number.isFinite(longitude)
+      ? Number(normalizeLongitude(longitude).toFixed(6))
+      : longitude
+    const nextLat = typeof latitude === 'number' && Number.isFinite(latitude)
+      ? Number(latitude.toFixed(6))
+      : latitude
+    setLat(String(nextLat))
+    setLng(String(nextLng))
   }
 
   function detectLocation() {
-    setGeoErr(null)
+    if (submitting) return
     if (!navigator.geolocation) {
-      setGeoErr('المتصفح لا يدعم تحديد الموقع الجغرافي')
+      setGeoErr('تحديد الموقع غير متاح على هذا الجهاز. اختر موقع المخزون على الخريطة.')
       return
     }
-    stopWatch()
+    const request = {}
+    gpsRequest.current = request
     setLocating(true)
+    setGeoErr(null)
 
-    // Each watch owns its timer and callbacks. A superseded reading cannot move the pin.
-    const watch = { best: Infinity }
-    watchRef.current = watch
-
-    function finish() {
-      stopWatch()
+    function onFailure(error) {
+      if (gpsRequest.current !== request) return
+      gpsRequest.current = null
       setLocating(false)
+      setGeoErr(
+        error?.code === 1
+          ? 'لم يتم السماح بالوصول إلى موقعك. اختر موقع المخزون على الخريطة.'
+          : 'تعذر تحديد موقعك. حاول مجدداً أو اختر موقع المخزون على الخريطة.'
+      )
     }
 
-    watch.id = navigator.geolocation.watchPosition(
+    navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
-        if (watchRef.current !== watch) return
-        const { latitude, longitude, accuracy } = coords
-        if (!isValidLocation(latitude, longitude)) return
-        if (accuracy < watch.best) {
-          watch.best = accuracy
-          setLat(String(Number(latitude.toFixed(6))))
-          setLng(String(Number(longitude.toFixed(6))))
-          setAccuracy(Math.round(accuracy))
+        if (gpsRequest.current !== request) return
+        const { latitude, longitude } = coords
+        if (!isValidLocation(latitude, longitude)) {
+          onFailure()
+          return
         }
-        if (accuracy <= 25) finish()
+        pickLocation(latitude, longitude)
       },
-      (error) => {
-        if (watchRef.current !== watch) return
-        if (watch.best === Infinity) {
-          if (error?.code === 1) setGeoErr('تم رفض إذن الوصول إلى الموقع الجغرافي')
-          else if (error?.code === 3) setGeoErr('انتهت مهلة تحديد الموقع — حاول مجدداً أو حدّد الموقع على الخريطة')
-          else setGeoErr('تعذر تحديد الموقع الجغرافي تلقائياً — حدّده على الخريطة')
-        }
-        finish()
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      onFailure,
+      { enableHighAccuracy: true, timeout: 10000 }
     )
-    watch.timer = setTimeout(() => {
-      if (watchRef.current !== watch) return
-      if (watch.best === Infinity) setGeoErr('انتهت مهلة تحديد الموقع — حاول مجدداً أو حدّد الموقع على الخريطة')
-      finish()
-    }, 15000)
   }
-
-  useEffect(() => {
-    detectLocation()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   const check = validateCreateForm({
     selectedType,
@@ -183,6 +166,7 @@ export default function StockCreatePage({ go, showToast }) {
         units: units.map((u) => ({
           name: u.name.trim(),
           rate: u.is_main ? 1 : Number(u.rate),
+          price: Number(u.price),
           is_main: u.is_main,
         })),
         ...(isGazStockType(selectedType.slug)
@@ -323,37 +307,36 @@ export default function StockCreatePage({ go, showToast }) {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <h2 className="text-sm font-black text-slate-900">الموقع الجغرافي</h2>
-                  <p className="text-[11px] text-slate-500">سيُطلب إذن موقعك تلقائياً — انقر على الخريطة أو اسحب الدبوس لضبط الموقع بدقة</p>
+                  <p id="stock-map-instructions" className="text-[11px] text-slate-500">
+                    اضغط على الخريطة أو اسحب العلامة لتحديد موقع المخزون، أو استخدم زر موقعي الحالي.
+                  </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={detectLocation}
-                  disabled={locating}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-mawarid-200 bg-mawarid-50 hover:bg-mawarid-100 text-mawarid-800 text-xs font-bold transition cursor-pointer disabled:opacity-60 disabled:cursor-wait"
-                >
-                  <Icons.MapPin className="w-4 h-4" aria-hidden="true" />
-                  <span>{locating ? 'جارٍ تحديد الموقع…' : 'تحديد موقعي الحالي (GPS)'}</span>
-                </button>
+                <SecondaryBtn onClick={detectLocation} disabled={locating || submitting}>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Icons.MapPin className="w-4 h-4" aria-hidden="true" />
+                    <span>{locating ? 'جارٍ تحديد موقعك…' : 'استخدام موقعي الحالي'}</span>
+                  </span>
+                </SecondaryBtn>
               </div>
 
-              {geoErr && <p className="text-[12px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">{geoErr}</p>}
+              <div className={submitting ? 'pointer-events-none' : undefined} inert={submitting ? '' : undefined}>
+                <LocationPicker
+                  lat={hasValidLocation ? Number(lat) : null}
+                  lng={hasValidLocation ? Number(lng) : null}
+                  onChange={pickLocation}
+                  initialCenter={TAIZ_CENTER}
+                  initialZoom={13}
+                  keyboardLabel="خريطة موقع المخزون"
+                  keyboardDescriptionId="stock-map-instructions"
+                />
+              </div>
 
-              <LocationPicker
-                lat={hasValidLocation ? Number(lat) : null}
-                lng={hasValidLocation ? Number(lng) : null}
-                accuracy={accuracy}
-                onChange={pickLocation}
-              />
+              {geoErr && <p className="text-sm text-rose-700" role="alert">{geoErr}</p>}
 
               {hasValidLocation && (
-                <p className="text-[11px] font-bold text-slate-500" dir="ltr">
-                  {Number(lat)}, {Number(lng)}
-                  {accuracy != null && ` (±${accuracy} m)`}
-                </p>
-              )}
-              {accuracy != null && accuracy > 100 && (
-                <p className="text-[12px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
-                  دقة الموقع منخفضة (±{accuracy} متر) — اسحب الدبوس أو انقر على الخريطة لتحديد موقع المخزون بدقة.
+                <p className="flex flex-wrap items-center gap-2 text-xs text-slate-600" role="status">
+                  <span className="font-bold text-emerald-700">تم تحديد الموقع</span>
+                  <span dir="ltr" className="font-mono text-slate-800">{Number(lat)}, {Number(lng)}</span>
                 </p>
               )}
 
@@ -409,17 +392,33 @@ export default function StockCreatePage({ go, showToast }) {
                 maxLength={UNIT_NAME_MAX}
                 error={submitted && !!check.rowErrors[0]}
               />
-              <div className="mt-3">
-                <Label htmlFor="main-rate">معامل التحويل</Label>
-                <input
-                  id="main-rate"
-                  value="1"
-                  disabled
-                  readOnly
-                  aria-label="معامل الوحدة الرئيسية ثابت ولا يقبل التعديل"
-                  className="w-full min-h-[48px] rounded-xl border border-slate-200 bg-slate-100 px-3.5 text-slate-500 text-sm font-bold font-mono outline-none cursor-not-allowed"
-                  dir="ltr"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                <div>
+                  <Label htmlFor="main-rate">معامل التحويل</Label>
+                  <input
+                    id="main-rate"
+                    value="1"
+                    disabled
+                    readOnly
+                    aria-label="معامل الوحدة الرئيسية ثابت ولا يقبل التعديل"
+                    className="w-full min-h-[48px] rounded-xl border border-slate-200 bg-slate-100 px-3.5 text-slate-500 text-sm font-bold font-mono outline-none cursor-not-allowed"
+                    dir="ltr"
+                  />
+                </div>
+                <div>
+                  <Label req htmlFor="main-price">سعر الوحدة</Label>
+                  <TextInput
+                    id="main-price"
+                    value={units[0]?.price ?? ''}
+                    onChange={(v) => setUnitAt(0, { price: v })}
+                    placeholder="مثال: 7500"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    dir="ltr"
+                    error={submitted && !!check.rowErrors[0]}
+                  />
+                </div>
               </div>
               {showErr(check.rowErrors[0])}
             </div>
@@ -446,7 +445,7 @@ export default function StockCreatePage({ go, showToast }) {
                         <Icons.Close className="w-4 h-4" />
                       </button>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
                         <Label req htmlFor={`unit-name-${u._key}`}>اسم الوحدة</Label>
                         <TextInput
@@ -466,6 +465,20 @@ export default function StockCreatePage({ go, showToast }) {
                           onChange={(v) => setUnitAt(i, { rate: v.replace(/\D/g, '').slice(0, 9) })}
                           placeholder="مثال: 12"
                           inputMode="numeric"
+                          dir="ltr"
+                          error={submitted && !!check.rowErrors[i]}
+                        />
+                      </div>
+                      <div>
+                        <Label req htmlFor={`unit-price-${u._key}`}>سعر الوحدة</Label>
+                        <TextInput
+                          id={`unit-price-${u._key}`}
+                          value={u.price}
+                          onChange={(v) => setUnitAt(i, { price: v })}
+                          placeholder="مثال: 70000"
+                          type="number"
+                          step="0.01"
+                          min="0"
                           dir="ltr"
                           error={submitted && !!check.rowErrors[i]}
                         />
@@ -496,7 +509,7 @@ export default function StockCreatePage({ go, showToast }) {
                 إلغاء
               </SecondaryBtn>
               <div className="flex-1">
-                <PrimaryBtn type="submit" loading={submitting}>
+                <PrimaryBtn type="submit" loading={submitting} disabled={locating}>
                   إنشاء المخزون
                 </PrimaryBtn>
               </div>
