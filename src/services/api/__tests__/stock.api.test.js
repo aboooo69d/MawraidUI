@@ -63,8 +63,8 @@ describe('stockApi — مسارات وطرق الطلب (Multi-Stock)', () => {
       address: 'صنعاء - شارع الستين الشمالي بجانب جولة عمران',
       location: { lat: 15.3694, lng: 44.191 },
       units: [
-        { name: 'اسطوانة', rate: 1, is_main: true },
-        { name: 'شبك', rate: 10, is_main: false },
+        { name: 'اسطوانة', rate: 1, price: 7500, is_main: true },
+        { name: 'شبك', rate: 10, price: 70000, is_main: false },
       ],
       stock_details: { gaz_stock_type: 'exchange' },
     }
@@ -103,24 +103,24 @@ describe('stockApi — مسارات وطرق الطلب (Multi-Stock)', () => {
     const fetchMock = vi.fn(async () => ok({ id: 12 }))
     vi.stubGlobal('fetch', fetchMock)
 
-    await stockApi.addStockUnit('abc', { name: 'طرد', rate: 24, is_main: false })
+    await stockApi.addStockUnit('abc', { name: 'طرد', rate: 24, price: 150000, is_main: false })
 
     const [url, opts] = fetchMock.mock.calls[0]
     expect(url).toBe('/api/v1/stocks/me/abc/units')
     expect(opts.method).toBe('POST')
-    expect(JSON.parse(opts.body)).toEqual({ name: 'طرد', rate: 24, is_main: false })
+    expect(JSON.parse(opts.body)).toEqual({ name: 'طرد', rate: 24, price: 150000, is_main: false })
   })
 
   it('updateStockUnit → PATCH /api/v1/stocks/me/:id/units/:unit_id', async () => {
     const fetchMock = vi.fn(async () => ok({ id: 11 }))
     vi.stubGlobal('fetch', fetchMock)
 
-    await stockApi.updateStockUnit('abc', 11, { name: 'كرتون كبير', rate: 15 })
+    await stockApi.updateStockUnit('abc', 11, { name: 'كرتون كبير', rate: 15, price: 85000 })
 
     const [url, opts] = fetchMock.mock.calls[0]
     expect(url).toBe('/api/v1/stocks/me/abc/units/11')
     expect(opts.method).toBe('PATCH')
-    expect(JSON.parse(opts.body)).toEqual({ name: 'كرتون كبير', rate: 15 })
+    expect(JSON.parse(opts.body)).toEqual({ name: 'كرتون كبير', rate: 15, price: 85000 })
   })
 })
 
@@ -190,5 +190,64 @@ describe('stockApi — أغلفة الأخطاء الجديدة', () => {
     await expect(
       stockApi.createStockTransaction('abc', { amount: 100, unit_id: 10, is_in: false })
     ).rejects.toMatchObject({ status: 409, code: 1602 })
+  })
+})
+
+describe('stockApi.getStocks — استكشاف المخزون للمستفيدين', () => {
+  it('يرسل جميع فلاتر البحث والموقع والترقيم ويرجع { data, meta }', async () => {
+    const fetchMock = vi.fn(async () =>
+      ok([{ id: 's1', available: 40 }], { page: 2, per_page: 10, total: 25, total_pages: 3 })
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const res = await stockApi.getStocks({
+      name: '  المنصور  ',
+      stock_type: 'gaz',
+      stock_type_id: 1,
+      in_stock: true,
+      lat: 13.5795,
+      lng: 44.0209,
+      max_distance: 5000,
+      page: 2,
+      page_size: 10,
+    })
+
+    const [url, opts] = fetchMock.mock.calls[0]
+    expect(opts.method).toBe('GET')
+    expect(opts.credentials).toBe('include')
+    const parsed = new URL(url, 'http://localhost')
+    expect(parsed.pathname).toBe('/api/v1/stocks')
+    expect(parsed.searchParams.get('name')).toBe('المنصور')
+    expect(parsed.searchParams.get('stock_type')).toBe('gaz')
+    expect(parsed.searchParams.get('stock_type_id')).toBe('1')
+    expect(parsed.searchParams.get('in_stock')).toBe('true')
+    expect(parsed.searchParams.get('lat')).toBe('13.5795')
+    expect(parsed.searchParams.get('lng')).toBe('44.0209')
+    expect(parsed.searchParams.get('max_distance')).toBe('5000')
+    expect(parsed.searchParams.get('page')).toBe('2')
+    expect(parsed.searchParams.get('page_size')).toBe('10')
+    expect(res.data).toHaveLength(1)
+    expect(res.meta).toEqual({ page: 2, per_page: 10, total: 25, total_pages: 3 })
+  })
+
+  it('لا يرسل lat أو lng أو max_distance إذا كان أحد الإحداثيين مفقوداً (تفادياً لـ 400)', async () => {
+    const fetchMock = vi.fn(async () => ok([], { page: 1, per_page: 10, total: 0, total_pages: 0 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await stockApi.getStocks({ lat: 13.5795, max_distance: 5000 })
+
+    const [url] = fetchMock.mock.calls[0]
+    expect(url).toBe('/api/v1/stocks')
+  })
+
+  it('يتعامل بأمان مع غياب data ويرمي 403 للمزود', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        jsonResponse({ success: false, error: { code: 1107, message: 'forbidden' } }, 403)
+      )
+    )
+
+    await expect(stockApi.getStocks()).rejects.toMatchObject({ status: 403, code: 1107 })
   })
 })

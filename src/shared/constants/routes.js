@@ -9,6 +9,8 @@ export const ROUTES = {
   DASHBOARD: 'dashboard',
   CITIZEN_ADDRESSES: 'citizen-addresses',
   ADMIN_ADDRESSES: 'admin-addresses',
+  // ── استكشاف المخزون للمستفيدين والإدارة ──
+  CONSUMER_STOCKS: 'consumer-stocks',
   // ── ميزة المخزون (للمزود فقط) ──
   STOCK_CREATE: 'stock-create',
   STOCK_DASHBOARD: 'stock-dashboard',

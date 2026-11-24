@@ -43,4 +43,59 @@ export const stockApi = {
   // تعديل وحدة (PATCH /api/v1/stocks/me/:stock_id/units/:unit_id)
   updateStockUnit: (stockId, unitId, payload) =>
     request(`${STOCKS_ME}/${stockId}/units/${unitId}`, { method: 'PATCH', body: payload }),
+
+  // استكشاف المخزون المتاح للمستفيدين والإدارة (GET /api/v1/stocks)
+  // يُرجع { data, meta } مع دعم الفلاتر والفرز الجغرافي.
+  getStocks: async (filters = {}) => {
+    const params = new URLSearchParams()
+
+    if (typeof filters.name === 'string' && filters.name.trim()) {
+      params.set('name', filters.name.trim())
+    }
+    if (typeof filters.stock_type === 'string' && filters.stock_type.trim()) {
+      params.set('stock_type', filters.stock_type.trim())
+    }
+    if (filters.stock_type_id !== undefined && filters.stock_type_id !== null && filters.stock_type_id !== '') {
+      const typeId = Number(filters.stock_type_id)
+      if (Number.isInteger(typeId) && typeId > 0) {
+        params.set('stock_type_id', String(typeId))
+      }
+    }
+    if (typeof filters.in_stock === 'boolean') {
+      params.set('in_stock', String(filters.in_stock))
+    }
+
+    // يجب إرسال lat و lng معاً لتجنب 400 Bad Request
+    const hasLat = typeof filters.lat === 'number' && Number.isFinite(filters.lat)
+    const hasLng = typeof filters.lng === 'number' && Number.isFinite(filters.lng)
+    if (hasLat && hasLng) {
+      params.set('lat', String(filters.lat))
+      params.set('lng', String(filters.lng))
+
+      const maxDist = Number(filters.max_distance)
+      if (Number.isFinite(maxDist) && maxDist > 0) {
+        params.set('max_distance', String(maxDist))
+      }
+    }
+
+    if (filters.page !== undefined && filters.page !== null) {
+      const page = Number(filters.page)
+      if (Number.isInteger(page) && page >= 1) {
+        params.set('page', String(page))
+      }
+    }
+    if (filters.page_size !== undefined && filters.page_size !== null) {
+      const pageSize = Number(filters.page_size)
+      if (Number.isInteger(pageSize) && pageSize >= 1) {
+        params.set('page_size', String(Math.min(pageSize, 100)))
+      }
+    }
+
+    const qs = params.toString()
+    const res = await request(qs ? `/stocks?${qs}` : '/stocks', { withMeta: true })
+    return {
+      data: Array.isArray(res?.data) ? res.data : [],
+      meta: res?.meta || null,
+    }
+  },
 }

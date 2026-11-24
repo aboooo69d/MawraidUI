@@ -62,3 +62,14 @@ describe('resolveCurrentScreen — address role restrictions', () => {
     }
   })
 })
+
+describe('resolveCurrentScreen — consumer stocks discovery role restrictions', () => {
+  const admin = { role_name: 'admin' }
+
+  it('يسمح للمستفيد والإدارة ويمنع المزود والزائر', () => {
+    expect(resolveCurrentScreen(ROUTES.CONSUMER_STOCKS, null)).toBe(ROUTES.LOGIN)
+    expect(resolveCurrentScreen(ROUTES.CONSUMER_STOCKS, consumer)).toBe(ROUTES.CONSUMER_STOCKS)
+    expect(resolveCurrentScreen(ROUTES.CONSUMER_STOCKS, admin)).toBe(ROUTES.CONSUMER_STOCKS)
+    expect(resolveCurrentScreen(ROUTES.CONSUMER_STOCKS, provider)).toBe(ROUTES.DASHBOARD)
+  })
+})

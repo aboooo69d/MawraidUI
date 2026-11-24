@@ -18,6 +18,7 @@ import StockHistoryPage from '../features/stock/pages/StockHistoryPage'
 
 import CitizenAddressesPage from '../features/addresses/pages/CitizenAddressesPage'
 import AdminAddressesPage from '../features/addresses/pages/AdminAddressesPage'
+import ConsumerStocksPage from '../features/consumer-stocks/pages/ConsumerStocksPage'
 
 // شاشات ميزة المخزون — متاحة لحسابات مزودي الخدمة فقط
 const STOCK_SCREENS = [
@@ -29,16 +30,17 @@ const STOCK_SCREENS = [
 ]
 
 const PROTECTED_ROLES = new Map([
-  ...STOCK_SCREENS.map((screen) => [screen, 'provider']),
-  [ROUTES.CITIZEN_ADDRESSES, 'consumer'],
-  [ROUTES.ADMIN_ADDRESSES, 'admin'],
+  ...STOCK_SCREENS.map((screen) => [screen, ['provider']]),
+  [ROUTES.CITIZEN_ADDRESSES, ['consumer']],
+  [ROUTES.ADMIN_ADDRESSES, ['admin']],
+  [ROUTES.CONSUMER_STOCKS, ['consumer', 'admin']],
 ])
 
 export function resolveCurrentScreen(screen, user) {
-  const role = PROTECTED_ROLES.get(screen)
-  if (role) {
+  const allowedRoles = PROTECTED_ROLES.get(screen)
+  if (allowedRoles) {
     if (!user) return ROUTES.LOGIN
-    if (user.role_name !== role) return ROUTES.DASHBOARD
+    if (!allowedRoles.includes(user.role_name)) return ROUTES.DASHBOARD
     return screen
   }
   if (user && screen !== ROUTES.DASHBOARD && screen !== ROUTES.HOME) return ROUTES.DASHBOARD
@@ -79,6 +81,7 @@ function Shell() {
     [ROUTES.DASHBOARD]: <DashboardPage go={go} />,
     [ROUTES.CITIZEN_ADDRESSES]: <CitizenAddressesPage go={go} showToast={showToast} onSessionExpired={onAddressSessionExpired} />,
     [ROUTES.ADMIN_ADDRESSES]: <AdminAddressesPage go={go} onSessionExpired={onAddressSessionExpired} />,
+    [ROUTES.CONSUMER_STOCKS]: <ConsumerStocksPage go={go} onSessionExpired={onAddressSessionExpired} />,
     // ── ميزة المخزون (provider only) ──
     [ROUTES.STOCK_CREATE]: <StockCreatePage go={go} showToast={showToast} />,
     [ROUTES.STOCK_DASHBOARD]: <StockDashboardPage go={go} showToast={showToast} stockId={params.stockId} />,

@@ -88,17 +88,34 @@ export default function Dashboard({ go }) {
         )}
 
         {(isCitizen || isAdmin) && (
-          <button
-            type="button"
-            onClick={() => go(isAdmin ? ROUTES.ADMIN_ADDRESSES : ROUTES.CITIZEN_ADDRESSES)}
-            className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-start shadow-xs hover:border-mawarid-500 sm:w-auto sm:pe-6"
-          >
-            <span className="rounded-xl bg-mawarid-50 p-2.5 text-mawarid-700">
-              <Icons.MapPin className="w-5 h-5" />
-            </span>
-            <span className="flex-1 font-black text-slate-900">{addressEntry}</span>
-            <Icons.ArrowRight className="w-4 h-4 rotate-180 text-mawarid-700" />
-          </button>
+          <div className="flex flex-wrap items-stretch gap-3">
+            <button
+              type="button"
+              onClick={() => go(ROUTES.CONSUMER_STOCKS)}
+              className="flex w-full items-center gap-3 rounded-2xl border border-mawarid-200 bg-white p-4 text-start shadow-xs hover:border-mawarid-500 transition cursor-pointer sm:w-auto sm:pe-6"
+            >
+              <span className="rounded-xl bg-mawarid-50 p-2.5 text-mawarid-700">
+                <Icons.Box className="w-5 h-5" />
+              </span>
+              <span className="flex-1">
+                <span className="block font-black text-slate-900">استكشاف المخزون المتاح</span>
+                <span className="block text-xs text-slate-500">تصفّح أقرب المخازن مع المسافة بالكيلومتر</span>
+              </span>
+              <Icons.ArrowRight className="w-4 h-4 rotate-180 text-mawarid-700" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => go(isAdmin ? ROUTES.ADMIN_ADDRESSES : ROUTES.CITIZEN_ADDRESSES)}
+              className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-start shadow-xs hover:border-mawarid-500 transition cursor-pointer sm:w-auto sm:pe-6"
+            >
+              <span className="rounded-xl bg-mawarid-50 p-2.5 text-mawarid-700">
+                <Icons.MapPin className="w-5 h-5" />
+              </span>
+              <span className="flex-1 font-black text-slate-900">{addressEntry}</span>
+              <Icons.ArrowRight className="w-4 h-4 rotate-180 text-mawarid-700" />
+            </button>
+          </div>
         )}
 
         {/* بطاقات حالة الموارد والحصص */}
