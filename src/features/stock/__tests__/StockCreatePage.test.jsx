@@ -1,12 +1,16 @@
 // @vitest-environment jsdom
 // ═══════════ اختبارات شاشة إنشاء المخزون (Multi-Stock + الموقع + التفاصيل) ═══════════
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { screen, fireEvent, waitFor } from '@testing-library/react'
+import { act, screen, fireEvent, waitFor } from '@testing-library/react'
 import StockCreatePage from '../pages/StockCreatePage'
 import { ROUTES } from '../../../shared/constants/routes'
-import { STOCK_TYPES, ok, stubApi, renderWithAuth } from './helpers'
+import { STOCK_TYPES, apiError, ok, stubApi, renderWithAuth } from './helpers'
 
-vi.mock('../../../shared/components/ui/LocationPicker', () => ({ default: () => null }))
+vi.mock('../../../shared/components/ui/LocationPicker', () => ({
+  default: ({ onChange }) => (
+    <button type="button" onClick={() => onChange(0, 44.123456)}>اختيار نقطة على الخريطة</button>
+  ),
+}))
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -15,9 +19,9 @@ afterEach(() => {
 
 function stubTypes() {
   return stubApi(({ url, method }) => {
-    if (url.includes('/stocks/types')) return ok(STOCK_TYPES)
-    if (method === 'POST' && url.endsWith('/api/v1/stocks')) return ok({ id: 'new-stock-1' })
-    return ok({})
+    if (method === 'GET' && url === '/api/v1/stocks/types') return ok(STOCK_TYPES)
+    if (method === 'POST' && url === '/api/v1/stocks/me') return ok({ id: 'new-stock-1' })
+    throw new Error(`Unexpected request: ${method} ${url}`)
   })
 }
 
@@ -62,7 +66,7 @@ describe('StockCreatePage — التحقق والإنشاء', () => {
 
     await waitFor(() => expect(calls.filter((c) => c.method === 'POST').length).toBe(1))
     const post = calls.find((c) => c.method === 'POST')
-    expect(post.url).toBe('/api/v1/stocks')
+    expect(post.url).toBe('/api/v1/stocks/me')
     expect(post.body).toEqual({
       stock_type_id: 1,
       stock_type: 'gaz',
@@ -119,4 +123,48 @@ describe('StockCreatePage — التحقق والإنشاء', () => {
     expect(screen.getByText(/يرجى تحديد إحداثيات الموقع بشكل صحيح/)).toBeTruthy()
     expect(calls.filter((c) => c.method === 'POST').length).toBe(0)
   })
+})
+
+
+it('يحفظ اختيار الخريطة حتى لو وصل رد GPS بعد إلغاء المراقبة', async () => {
+  const watchPosition = vi.fn().mockReturnValueOnce(1).mockReturnValueOnce(2)
+  const clearWatch = vi.fn()
+  vi.stubGlobal('navigator', { geolocation: { watchPosition, clearWatch } })
+  const { calls } = stubTypes()
+  const go = vi.fn()
+  renderWithAuth(<StockCreatePage go={go} showToast={vi.fn()} />)
+  await fillCommonFields('2')
+  const watch = screen.getByRole('button', { name: /تحديد موقعي الحالي/ })
+  fireEvent.click(watch)
+  expect(watchPosition).toHaveBeenCalledTimes(2)
+  fireEvent.click(screen.getByRole('button', { name: 'اختيار نقطة على الخريطة' }))
+
+  const [onPosition] = watchPosition.mock.calls[1]
+  act(() => onPosition({ coords: { latitude: 12, longitude: 45, accuracy: 10 } }))
+  fireEvent.click(screen.getByRole('button', { name: 'إنشاء المخزون' }))
+
+  await waitFor(() => expect(go).toHaveBeenCalledWith(ROUTES.STOCK_DASHBOARD, { stockId: 'new-stock-1' }))
+  expect(clearWatch).toHaveBeenCalledWith(2)
+  expect(calls.find((call) => call.method === 'POST').body.location).toEqual({ lat: 0, lng: 44.123456 })
+})
+
+it('يطلب تسجيل الدخول مجدداً عند انتهاء الجلسة أثناء تحميل الأنواع', async () => {
+  stubApi(() => apiError(401, 1106, 'session expired'))
+  renderWithAuth(<StockCreatePage go={vi.fn()} showToast={vi.fn()} />)
+
+  expect(await screen.findByRole('button', { name: 'تسجيل الدخول مجدداً' })).toBeTruthy()
+  expect(screen.queryByRole('button', { name: 'إنشاء المخزون' })).toBeNull()
+})
+
+it('لا يعرض نجاحاً عند غياب معرف المخزون من استجابة الإنشاء', async () => {
+  stubApi(({ method }) => method === 'GET' ? ok(STOCK_TYPES) : ok({}))
+  const go = vi.fn()
+  const showToast = vi.fn()
+  renderWithAuth(<StockCreatePage go={go} showToast={showToast} />)
+  await fillCommonFields('2')
+  fireEvent.click(screen.getByRole('button', { name: 'إنشاء المخزون' }))
+
+  expect((await screen.findByRole('alert')).textContent).toContain('تعذر التحقق من إنشاء المخزون')
+  expect(showToast).not.toHaveBeenCalled()
+  expect(go).not.toHaveBeenCalled()
 })

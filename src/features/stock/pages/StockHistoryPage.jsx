@@ -23,7 +23,7 @@ export default function StockHistoryPage({ go, stockId: propStockId }) {
   const [page, setPage] = useState(1)
   const [items, setItems] = useState([])
   const [meta, setMeta] = useState(null)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [listErr, setListErr] = useState(null)
 
   const seqRef = useRef(0) // حماية من تجاوز الاستجابة القديمة للأخيرة
@@ -53,7 +53,11 @@ export default function StockHistoryPage({ go, stockId: propStockId }) {
   }, [])
 
   useEffect(() => {
-    if (stockId) load(stockId, filter, page)
+    if (!stockId) return
+    load(stockId, filter, page)
+    return () => {
+      seqRef.current++
+    }
   }, [stockId, filter, page, load])
 
   function changeFilter(key) {
@@ -145,7 +149,7 @@ export default function StockHistoryPage({ go, stockId: propStockId }) {
       )}
 
       {/* ── الترقيم ── */}
-      {!loading && !listErr && items.length > 0 && (
+      {!loading && !listErr && (items.length > 0 || page > 1) && (
         <div className="flex items-center justify-between gap-3 pt-1">
           <SecondaryBtn
             onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -159,7 +163,7 @@ export default function StockHistoryPage({ go, stockId: propStockId }) {
 
           <div className="text-center">
             <div className="text-xs font-black text-slate-700">
-              صفحة {page} من {totalPages}
+              صفحة {page}{page <= totalPages && ` من ${totalPages}`}
             </div>
             {total !== undefined && total !== null && (
               <div className="text-[11px] text-slate-400">{formatAmount(total)} حركة</div>

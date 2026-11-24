@@ -12,10 +12,10 @@ afterEach(() => {
 
 function stubUnits(unitHandler) {
   return stubApi(({ url, method, body }) => {
-    if (method === 'GET' && url.endsWith(`/api/v1/stocks/${STOCK.id}`)) return ok(STOCK)
-    if (method === 'POST' && url.includes('/units')) return unitHandler({ method, url, body })
-    if (method === 'PATCH' && url.includes('/units/')) return unitHandler({ method, url, body })
-    return ok({})
+    if (method === 'GET' && url === `/api/v1/stocks/me/${STOCK.id}`) return ok(STOCK)
+    if (method === 'POST' && url === `/api/v1/stocks/me/${STOCK.id}/units`) return unitHandler({ method, url, body })
+    if (method === 'PATCH' && STOCK.units.some((unit) => url === `/api/v1/stocks/me/${STOCK.id}/units/${unit.id}`)) return unitHandler({ method, url, body })
+    throw new Error(`Unexpected request: ${method} ${url}`)
   })
 }
 
@@ -50,12 +50,12 @@ describe('StockUnitsPage — إضافة وحدة فرعية', () => {
 
     await waitFor(() => expect(calls.filter((c) => c.method === 'POST').length).toBe(1))
     const post = calls.find((c) => c.method === 'POST')
-    expect(post.url).toBe(`/api/v1/stocks/${STOCK.id}/units`)
+    expect(post.url).toBe(`/api/v1/stocks/me/${STOCK.id}/units`)
     expect(post.body).toEqual({ name: 'طرد', rate: 24, is_main: false })
 
     // تحديث المخزون بعد النجاح
     await waitFor(() =>
-      expect(calls.filter((c) => c.method === 'GET' && c.url.endsWith(`/api/v1/stocks/${STOCK.id}`)).length).toBe(2)
+      expect(calls.filter((c) => c.method === 'GET' && c.url === `/api/v1/stocks/me/${STOCK.id}`).length).toBe(2)
     )
     expect(showToast).toHaveBeenCalledWith('تمت إضافة الوحدة بنجاح')
   })
@@ -121,12 +121,12 @@ describe('StockUnitsPage — تعديل الوحدات', () => {
 
     await waitFor(() => expect(calls.filter((c) => c.method === 'PATCH').length).toBe(1))
     const patch = calls.find((c) => c.method === 'PATCH')
-    expect(patch.url).toBe(`/api/v1/stocks/${STOCK.id}/units/11`)
+    expect(patch.url).toBe(`/api/v1/stocks/me/${STOCK.id}/units/11`)
     expect(patch.body).toEqual({ name: 'كرتون كبير', rate: 15 })
 
     await waitFor(() => expect(showToast).toHaveBeenCalledWith('تم حفظ التعديلات'))
     await waitFor(() =>
-      expect(calls.filter((c) => c.method === 'GET' && c.url.endsWith(`/api/v1/stocks/${STOCK.id}`)).length).toBe(2)
+      expect(calls.filter((c) => c.method === 'GET' && c.url === `/api/v1/stocks/me/${STOCK.id}`).length).toBe(2)
     )
   })
 
@@ -175,4 +175,26 @@ describe('StockUnitsPage — تعديل الوحدات', () => {
       await screen.findByText('لا يمكن تغيير معامل وحدة تم استخدامها في حركات سابقة، يمكنك تعديل الاسم فقط')
     ).toBeTruthy()
   })
+})
+
+it('يطلب تسجيل الدخول إذا انتهت الجلسة أثناء إعادة محاولة تعديل الاسم', async () => {
+  const { calls } = stubUnits(({ body }) => body.rate !== undefined
+    ? apiError(409, 1610, 'unit has transactions')
+    : apiError(401, 1106, 'session expired')
+  )
+  const showToast = vi.fn()
+  renderWithAuth(<StockUnitsPage go={vi.fn()} showToast={showToast} stockId={STOCK.id} />)
+
+  await screen.findByText('كرتون')
+  fireEvent.click(screen.getAllByText('تعديل')[1])
+  fireEvent.change(document.getElementById('edit-name-11'), { target: { value: 'كرتون كبير' } })
+  fireEvent.change(document.getElementById('edit-rate-11'), { target: { value: '15' } })
+  fireEvent.click(screen.getByText('حفظ التعديلات'))
+
+  expect(await screen.findByRole('button', { name: 'تسجيل الدخول مجدداً' })).toBeTruthy()
+  expect(calls.filter(({ method }) => method === 'PATCH').map(({ body }) => body)).toEqual([
+    { name: 'كرتون كبير', rate: 15 },
+    { name: 'كرتون كبير' },
+  ])
+  expect(showToast).not.toHaveBeenCalled()
 })

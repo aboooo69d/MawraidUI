@@ -69,58 +69,61 @@ export default function StockCreatePage({ go, showToast }) {
 
   const removeUnit = (i) => setUnits((prev) => prev.filter((_, idx) => idx !== i))
 
-  const pickedRef = useRef(false)
-  const pickLocation = (la, ln) => {
-    pickedRef.current = true
+  const watchRef = useRef(null)
+
+  function stopWatch() {
+    const watch = watchRef.current
+    if (!watch) return
+    watchRef.current = null
+    clearTimeout(watch.timer)
+    navigator.geolocation.clearWatch?.(watch.id)
+  }
+
+  useEffect(() => stopWatch, [])
+
+  function pickLocation(latitude, longitude) {
     stopWatch()
     setLocating(false)
     setAccuracy(null)
-    setLat(String(la))
-    setLng(String(ln))
+    setLat(String(latitude))
+    setLng(String(longitude))
     setGeoErr(null)
   }
 
-  const watchRef = useRef(null)
-  const stopWatch = () => {
-    if (watchRef.current != null && typeof navigator !== 'undefined') {
-      navigator.geolocation?.clearWatch?.(watchRef.current)
-    }
-    watchRef.current = null
-  }
-  useEffect(() => stopWatch, [])
-
-  // تحديد دقيق: نتابع قراءات GPS ونحتفظ بالأدق حتى ≤ 25م أو انتهاء المهلة
-  function detectLocation(auto = false) {
+  function detectLocation() {
     setGeoErr(null)
-    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+    if (!navigator.geolocation) {
       setGeoErr('المتصفح لا يدعم تحديد الموقع الجغرافي')
       return
     }
     stopWatch()
     setLocating(true)
-    let best = Infinity
-    let timer = null
-    const finish = () => {
-      clearTimeout(timer)
+
+    // Each watch owns its timer and callbacks. A superseded reading cannot move the pin.
+    const watch = { best: Infinity }
+    watchRef.current = watch
+
+    function finish() {
       stopWatch()
-      if (mountedRef.current) setLocating(false)
+      setLocating(false)
     }
-    watchRef.current = navigator.geolocation.watchPosition(
-      (pos) => {
-        if (!mountedRef.current) return finish()
-        const acc = pos.coords.accuracy ?? Infinity
-        if (auto === true && pickedRef.current) return finish() // لا نستبدل اختيار المستخدم
-        if (acc < best) {
-          best = acc
-          setLat(String(Number(pos.coords.latitude.toFixed(6))))
-          setLng(String(Number(pos.coords.longitude.toFixed(6))))
-          setAccuracy(Math.round(acc))
+
+    watch.id = navigator.geolocation.watchPosition(
+      ({ coords }) => {
+        if (watchRef.current !== watch) return
+        const { latitude, longitude, accuracy } = coords
+        if (!isValidLocation(latitude, longitude)) return
+        if (accuracy < watch.best) {
+          watch.best = accuracy
+          setLat(String(Number(latitude.toFixed(6))))
+          setLng(String(Number(longitude.toFixed(6))))
+          setAccuracy(Math.round(accuracy))
         }
-        if (acc <= 25) finish()
+        if (accuracy <= 25) finish()
       },
       (error) => {
-        if (!mountedRef.current) return
-        if (best === Infinity) {
+        if (watchRef.current !== watch) return
+        if (watch.best === Infinity) {
           if (error?.code === 1) setGeoErr('تم رفض إذن الوصول إلى الموقع الجغرافي')
           else if (error?.code === 3) setGeoErr('انتهت مهلة تحديد الموقع — حاول مجدداً أو حدّد الموقع على الخريطة')
           else setGeoErr('تعذر تحديد الموقع الجغرافي تلقائياً — حدّده على الخريطة')
@@ -129,12 +132,15 @@ export default function StockCreatePage({ go, showToast }) {
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     )
-    timer = setTimeout(finish, 15000)
+    watch.timer = setTimeout(() => {
+      if (watchRef.current !== watch) return
+      if (watch.best === Infinity) setGeoErr('انتهت مهلة تحديد الموقع — حاول مجدداً أو حدّد الموقع على الخريطة')
+      finish()
+    }, 15000)
   }
 
-  // طلب إذن الموقع تلقائياً عند فتح الصفحة
   useEffect(() => {
-    detectLocation(true)
+    detectLocation()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -185,20 +191,25 @@ export default function StockCreatePage({ go, showToast }) {
       }
 
       const created = await stockApi.createStock(payload)
+      if (!created?.id) {
+        throw new Error('تعذر التحقق من إنشاء المخزون. راجع قائمة مخازنك قبل المحاولة مجدداً.')
+      }
+      if (!mountedRef.current) return
       showToast?.('تم إنشاء المخزون بنجاح')
-      if (created?.id) go(ROUTES.STOCK_DASHBOARD, { stockId: created.id })
-      else go(ROUTES.DASHBOARD)
+      go(ROUTES.STOCK_DASHBOARD, { stockId: created.id })
     } catch (err) {
+      if (!mountedRef.current) return
       if (isSessionExpired(err)) {
         setSessionExpired(true)
       } else {
         setServerErr(err)
       }
     } finally {
-      setSubmitting(false)
+      if (mountedRef.current) setSubmitting(false)
     }
   }
 
+  const needsLogin = sessionExpired || isSessionExpired(types.err)
   return (
     <StockPage
       title="إضافة مخزون جديد"
@@ -207,9 +218,9 @@ export default function StockCreatePage({ go, showToast }) {
       backTo={ROUTES.DASHBOARD}
       backLabel="لوحة التحكم"
     >
-      {sessionExpired && <SessionExpiredState go={go} />}
+      {needsLogin && <SessionExpiredState go={go} />}
 
-      {!sessionExpired && (
+      {!needsLogin && (
         <>
           <InfoBanner>
             يمكنك إضافة أكثر من مخزون وإدارة كل مخزون بشكل مستقل — اختر التصنيف والعنوان والموقع والوحدات بدقة.
@@ -316,7 +327,7 @@ export default function StockCreatePage({ go, showToast }) {
                 </div>
                 <button
                   type="button"
-                  onClick={() => detectLocation()}
+                  onClick={detectLocation}
                   disabled={locating}
                   className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-mawarid-200 bg-mawarid-50 hover:bg-mawarid-100 text-mawarid-800 text-xs font-bold transition cursor-pointer disabled:opacity-60 disabled:cursor-wait"
                 >
@@ -354,7 +365,7 @@ export default function StockCreatePage({ go, showToast }) {
                   <TextInput
                     id="stock-lat"
                     value={lat}
-                    onChange={(v) => { pickedRef.current = true; setLat(v) }}
+                    onChange={(value) => pickLocation(value, lng)}
                     placeholder="15.3694"
                     inputMode="decimal"
                     dir="ltr"
@@ -366,7 +377,7 @@ export default function StockCreatePage({ go, showToast }) {
                   <TextInput
                     id="stock-lng"
                     value={lng}
-                    onChange={(v) => { pickedRef.current = true; setLng(v) }}
+                    onChange={(value) => pickLocation(lat, value)}
                     placeholder="44.1910"
                     inputMode="decimal"
                     dir="ltr"
