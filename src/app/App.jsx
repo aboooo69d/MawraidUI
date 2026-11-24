@@ -1,6 +1,7 @@
 // ═══════════ App — التنقل وإدارة المنظومة ═══════════
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { AuthProvider, useAuth } from './providers/AuthProvider'
+import { getErrorMessage } from '../services/api'
 import { ROUTES } from '../shared/constants/routes'
 import { Toast } from '../shared/components/ui'
 import HomePage from '../features/home/pages/HomePage'
@@ -15,6 +16,9 @@ import StockTransactionPage from '../features/stock/pages/StockTransactionPage'
 import StockUnitsPage from '../features/stock/pages/StockUnitsPage'
 import StockHistoryPage from '../features/stock/pages/StockHistoryPage'
 
+import CitizenAddressesPage from '../features/addresses/pages/CitizenAddressesPage'
+import AdminAddressesPage from '../features/addresses/pages/AdminAddressesPage'
+
 // شاشات ميزة المخزون — متاحة لحسابات مزودي الخدمة فقط
 const STOCK_SCREENS = [
   ROUTES.STOCK_CREATE,
@@ -24,12 +28,17 @@ const STOCK_SCREENS = [
   ROUTES.STOCK_HISTORY,
 ]
 
-// حماية شاشات المخزون: تتطلب جلسة نشطة وصلاحية provider
-// بقية الشاشات: وجود جلسة يوجّه المستخدم إلى لوحة التحكم (سواء كان على شاشات الدخول)
+const PROTECTED_ROLES = new Map([
+  ...STOCK_SCREENS.map((screen) => [screen, 'provider']),
+  [ROUTES.CITIZEN_ADDRESSES, 'consumer'],
+  [ROUTES.ADMIN_ADDRESSES, 'admin'],
+])
+
 export function resolveCurrentScreen(screen, user) {
-  if (STOCK_SCREENS.includes(screen)) {
+  const role = PROTECTED_ROLES.get(screen)
+  if (role) {
     if (!user) return ROUTES.LOGIN
-    if (user.role_name !== 'provider') return ROUTES.DASHBOARD
+    if (user.role_name !== role) return ROUTES.DASHBOARD
     return screen
   }
   if (user && screen !== ROUTES.DASHBOARD && screen !== ROUTES.HOME) return ROUTES.DASHBOARD
@@ -37,21 +46,27 @@ export function resolveCurrentScreen(screen, user) {
 }
 
 function Shell() {
-  const { user } = useAuth()
+  const { user, clearSession } = useAuth()
   const [screen, setScreen] = useState(ROUTES.HOME)
   const [params, setParams] = useState({})
   const [toast, setToast] = useState(null)
 
-  const go = (s, p = {}) => {
+  const go = useCallback((s, p = {}) => {
     setParams(p)
     setScreen(s)
     window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
+  }, [])
 
-  const showToast = (msg, ok = true) => {
+  const showToast = useCallback((msg, ok = true) => {
     setToast({ msg, ok })
     setTimeout(() => setToast(null), 3000)
-  }
+  }, [])
+
+  const onAddressSessionExpired = useCallback(() => {
+    clearSession()
+    go(ROUTES.LOGIN)
+    showToast(getErrorMessage({ code: 1106 }), false)
+  }, [clearSession, go, showToast])
 
   const screens = {
     [ROUTES.HOME]: <HomePage go={go} />,
@@ -62,6 +77,8 @@ function Shell() {
     [ROUTES.FORGOT_PASSWORD]: <Forgot go={go} />,
     [ROUTES.RESET_PASSWORD]: <Reset go={go} phone={params.phone} />,
     [ROUTES.DASHBOARD]: <DashboardPage go={go} />,
+    [ROUTES.CITIZEN_ADDRESSES]: <CitizenAddressesPage go={go} showToast={showToast} onSessionExpired={onAddressSessionExpired} />,
+    [ROUTES.ADMIN_ADDRESSES]: <AdminAddressesPage go={go} onSessionExpired={onAddressSessionExpired} />,
     // ── ميزة المخزون (provider only) ──
     [ROUTES.STOCK_CREATE]: <StockCreatePage go={go} showToast={showToast} />,
     [ROUTES.STOCK_DASHBOARD]: <StockDashboardPage go={go} showToast={showToast} stockId={params.stockId} />,

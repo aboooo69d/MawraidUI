@@ -19,8 +19,26 @@ const pinIcon = L.icon({
 const DEFAULT_CENTER = [15.3694, 44.191] // صنعاء
 const round = (n) => Number(n.toFixed(6))
 
-function ClickHandler({ onPick }) {
-  useMapEvents({ click: (e) => onPick(round(e.latlng.lat), round(e.latlng.lng)) })
+function PickHandler({ onPick, keyboardLabel, keyboardDescriptionId }) {
+  const map = useMapEvents({
+    click: (e) => onPick(round(e.latlng.lat), round(e.latlng.lng)),
+    keydown: (e) => {
+      const event = e.originalEvent
+      if (!keyboardLabel || event.key !== 'Enter' || event.target !== map.getContainer()) return
+      event.preventDefault()
+      const { lat, lng } = map.getCenter()
+      onPick(round(lat), round(lng))
+    },
+  })
+
+  useEffect(() => {
+    if (!keyboardLabel) return
+    const container = map.getContainer()
+    container.setAttribute('role', 'region')
+    container.setAttribute('aria-label', keyboardLabel)
+    if (keyboardDescriptionId) container.setAttribute('aria-describedby', keyboardDescriptionId)
+  }, [map, keyboardLabel, keyboardDescriptionId])
+
   return null
 }
 
@@ -28,6 +46,14 @@ function Recenter({ position }) {
   const map = useMap()
   const key = position ? `${position[0]},${position[1]}` : ''
   const last = useRef('')
+
+  useEffect(() => {
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(() => map.invalidateSize({ debounceMoveend: true }))
+    observer.observe(map.getContainer())
+    return () => observer.disconnect()
+  }, [map])
+
   useEffect(() => {
     if (position && key !== last.current) {
       last.current = key
@@ -37,16 +63,22 @@ function Recenter({ position }) {
   return null
 }
 
-/**
- * @param {{lat:number|null, lng:number|null, onChange:(lat:number,lng:number)=>void}} props
- */
-export default function LocationPicker({ lat, lng, accuracy, onChange }) {
+export default function LocationPicker({
+  lat,
+  lng,
+  accuracy,
+  onChange,
+  initialCenter = DEFAULT_CENTER,
+  initialZoom = 6,
+  keyboardLabel,
+  keyboardDescriptionId,
+}) {
   const position = lat != null && lng != null ? [lat, lng] : null
   return (
     <div className="rounded-xl overflow-hidden border border-slate-200 h-[320px] relative z-0" dir="ltr">
       <MapContainer
-        center={position || DEFAULT_CENTER}
-        zoom={position ? 16 : 6}
+        center={position || initialCenter}
+        zoom={position ? 16 : initialZoom}
         scrollWheelZoom
         style={{ height: '100%', width: '100%' }}
       >
@@ -54,7 +86,7 @@ export default function LocationPicker({ lat, lng, accuracy, onChange }) {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <ClickHandler onPick={onChange} />
+        <PickHandler onPick={onChange} keyboardLabel={keyboardLabel} keyboardDescriptionId={keyboardDescriptionId} />
         <Recenter position={position} />
         {position && accuracy != null && <Circle center={position} radius={accuracy} pathOptions={{ weight: 1 }} />}
         {position && (
