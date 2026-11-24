@@ -68,14 +68,18 @@ export default function LocationPicker({
   lng,
   accuracy,
   onChange,
+  readOnly = false,
+  height = 320,
   initialCenter = DEFAULT_CENTER,
   initialZoom = 6,
   keyboardLabel,
   keyboardDescriptionId,
 }) {
   const position = lat != null && lng != null ? [lat, lng] : null
+  const interactive = !readOnly && typeof onChange === 'function'
+
   return (
-    <div className="rounded-xl overflow-hidden border border-slate-200 relative z-0" style={{ height: 320 }} dir="ltr">
+    <div className="rounded-xl overflow-hidden border border-slate-200 relative z-0" style={{ height }} dir="ltr">
       <MapContainer
         center={position || initialCenter}
         zoom={position ? 16 : initialZoom}
@@ -86,20 +90,26 @@ export default function LocationPicker({
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <PickHandler onPick={onChange} keyboardLabel={keyboardLabel} keyboardDescriptionId={keyboardDescriptionId} />
+        {interactive && (
+          <PickHandler onPick={onChange} keyboardLabel={keyboardLabel} keyboardDescriptionId={keyboardDescriptionId} />
+        )}
         <Recenter position={position} />
         {position && accuracy != null && <Circle center={position} radius={accuracy} pathOptions={{ weight: 1 }} />}
         {position && (
           <Marker
             position={position}
             icon={pinIcon}
-            draggable
-            eventHandlers={{
-              dragend: (e) => {
-                const p = e.target.getLatLng()
-                onChange(round(p.lat), round(p.lng))
-              },
-            }}
+            draggable={interactive}
+            eventHandlers={
+              interactive
+                ? {
+                    dragend: (e) => {
+                      const p = e.target.getLatLng()
+                      onChange(round(p.lat), round(p.lng))
+                    },
+                  }
+                : undefined
+            }
           />
         )}
       </MapContainer>

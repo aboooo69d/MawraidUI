@@ -4,6 +4,7 @@ import {
   calculateDistanceKm,
   formatDistance,
   isValidCoords,
+  getStockDistance,
   enrichStocksWithDistance,
 } from '../utils/geo'
 
@@ -74,5 +75,25 @@ describe('enrichStocksWithDistance', () => {
   it('يرجع المخزون دون تعديل عند غياب إحداثيات المستفيد', () => {
     const result = enrichStocksWithDistance(sampleStocks, null)
     expect(result).toEqual(sampleStocks)
+  })
+})
+
+describe('getStockDistance', () => {
+  it('يحسب المسافة لمخزون واحد ويرجع null عند نقص الإحداثيات', () => {
+    const consumerCoords = { lat: 13.5795, lng: 44.0209 }
+    const stock = { id: 's1', location: { lat: 13.5811, lng: 44.0152 } }
+
+    expect(getStockDistance(stock, consumerCoords)).toEqual({
+      distance_km: 0.6,
+      distance_formatted: '600 م',
+    })
+    expect(getStockDistance(stock, null)).toEqual({
+      distance_km: null,
+      distance_formatted: null,
+    })
+    expect(getStockDistance({ id: 's2', location: null }, consumerCoords)).toEqual({
+      distance_km: null,
+      distance_formatted: null,
+    })
   })
 })

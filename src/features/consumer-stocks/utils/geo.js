@@ -59,6 +59,25 @@ export function isValidCoords(coords) {
 }
 
 /**
+ * حساب المسافة لمخزون واحد اعتماداً على إحداثيات المستفيد وإرجاع { distance_km, distance_formatted }.
+ */
+export function getStockDistance(stock, consumerCoords) {
+  if (!isValidCoords(consumerCoords) || !isValidCoords(stock?.location)) {
+    return { distance_km: null, distance_formatted: null }
+  }
+  const km = calculateDistanceKm(
+    consumerCoords.lat,
+    consumerCoords.lng,
+    stock.location.lat,
+    stock.location.lng
+  )
+  return {
+    distance_km: km,
+    distance_formatted: formatDistance(km),
+  }
+}
+
+/**
  * إثراء قائمة المخزون محلياً بالمسافة بالكيلومتر (distance_km) والنص المنسق (distance_formatted)
  * اعتماداً على إحداثيات المستفيد.
  */
@@ -67,17 +86,12 @@ export function enrichStocksWithDistance(stocks, consumerCoords) {
   if (!isValidCoords(consumerCoords)) return stocks
 
   return stocks.map((stock) => {
-    if (!isValidCoords(stock?.location)) return stock
-    const km = calculateDistanceKm(
-      consumerCoords.lat,
-      consumerCoords.lng,
-      stock.location.lat,
-      stock.location.lng
-    )
+    const { distance_km, distance_formatted } = getStockDistance(stock, consumerCoords)
+    if (distance_km === null) return stock
     return {
       ...stock,
-      distance_km: km,
-      distance_formatted: formatDistance(km),
+      distance_km,
+      distance_formatted,
     }
   })
 }
