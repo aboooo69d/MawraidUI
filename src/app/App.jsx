@@ -19,6 +19,7 @@ import StockHistoryPage from '../features/stock/pages/StockHistoryPage'
 import CitizenAddressesPage from '../features/addresses/pages/CitizenAddressesPage'
 import AdminAddressesPage from '../features/addresses/pages/AdminAddressesPage'
 import ConsumerStocksPage from '../features/consumer-stocks/pages/ConsumerStocksPage'
+import ConsumerStockDetailsPage from '../features/consumer-stocks/pages/ConsumerStockDetailsPage'
 
 // شاشات ميزة المخزون — متاحة لحسابات مزودي الخدمة فقط
 const STOCK_SCREENS = [
@@ -34,6 +35,7 @@ const PROTECTED_ROLES = new Map([
   [ROUTES.CITIZEN_ADDRESSES, ['consumer']],
   [ROUTES.ADMIN_ADDRESSES, ['admin']],
   [ROUTES.CONSUMER_STOCKS, ['consumer', 'admin']],
+  [ROUTES.CONSUMER_STOCK_DETAILS, ['consumer', 'admin']],
 ])
 
 export function resolveCurrentScreen(screen, user) {
@@ -82,6 +84,14 @@ function Shell() {
     [ROUTES.CITIZEN_ADDRESSES]: <CitizenAddressesPage go={go} showToast={showToast} onSessionExpired={onAddressSessionExpired} />,
     [ROUTES.ADMIN_ADDRESSES]: <AdminAddressesPage go={go} onSessionExpired={onAddressSessionExpired} />,
     [ROUTES.CONSUMER_STOCKS]: <ConsumerStocksPage go={go} onSessionExpired={onAddressSessionExpired} />,
+    [ROUTES.CONSUMER_STOCK_DETAILS]: (
+      <ConsumerStockDetailsPage
+        go={go}
+        stockId={params.stockId}
+        showToast={showToast}
+        onSessionExpired={onAddressSessionExpired}
+      />
+    ),
     // ── ميزة المخزون (provider only) ──
     [ROUTES.STOCK_CREATE]: <StockCreatePage go={go} showToast={showToast} />,
     [ROUTES.STOCK_DASHBOARD]: <StockDashboardPage go={go} showToast={showToast} stockId={params.stockId} />,

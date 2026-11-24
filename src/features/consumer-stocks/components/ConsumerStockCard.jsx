@@ -2,7 +2,7 @@
 import { Icons } from '../../../shared/components/ui'
 import { formatAmount, formatDateTime, formatGazStockType, formatPrice } from '../utils/format'
 
-function TypeIcon({ slug }) {
+export function StockTypeIcon({ slug }) {
   const s = String(slug || '').trim().toLowerCase()
   if (s === 'gaz' || s === 'gas') return <Icons.Gas className="w-4 h-4 text-amber-600" />
   if (s === 'water') return <Icons.Water className="w-4 h-4 text-sky-600" />
@@ -10,20 +10,37 @@ function TypeIcon({ slug }) {
   return <Icons.Box className="w-4 h-4 text-mawarid-700" />
 }
 
-export default function ConsumerStockCard({ stock }) {
+export default function ConsumerStockCard({ stock, onSelect }) {
   const isAvailable = Number(stock.available) > 0
   const mainUnit = stock.units?.find((u) => u.is_main) || stock.units?.[0]
   const balances = Array.isArray(stock.balances) ? stock.balances : []
   const gazTypeLabel = formatGazStockType(stock.stock_details?.gaz_stock_type)
+  const clickable = typeof onSelect === 'function'
+
+  function handleKeyDown(e) {
+    if (!clickable) return
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      onSelect(stock)
+    }
+  }
 
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs hover:border-mawarid-300 hover:shadow-md transition flex flex-col justify-between gap-4">
+    <article
+      role={clickable ? 'button' : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onClick={clickable ? () => onSelect(stock) : undefined}
+      onKeyDown={handleKeyDown}
+      className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-xs hover:border-mawarid-300 hover:shadow-md transition flex flex-col justify-between gap-4 ${
+        clickable ? 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-mawarid-600/25 focus:border-mawarid-500' : ''
+      }`}
+    >
       <div className="space-y-3">
         {/* ── الترويسة: التصنيف + شارة المسافة + التوفر ── */}
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 border border-slate-200 text-xs font-black text-slate-800">
-              <TypeIcon slug={stock.type?.slug} />
+              <StockTypeIcon slug={stock.type?.slug} />
               <span>{stock.type?.name || 'مخزون'}</span>
             </span>
 
@@ -99,17 +116,25 @@ export default function ConsumerStockCard({ stock }) {
         </div>
       </div>
 
-      {/* ── تذييل البطاقة: آخر تحديث ── */}
+      {/* ── تذييل البطاقة: آخر تحديث + عرض التفاصيل ── */}
       <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 text-[11px] text-slate-400">
         <span className="inline-flex items-center gap-1">
           <Icons.Clock className="w-3.5 h-3.5" />
           <span>آخر تحديث: {formatDateTime(stock.updated_at)}</span>
         </span>
-        {typeof stock.distance_km === 'number' && (
-          <span className="font-mono text-slate-500" dir="ltr">
-            {stock.distance_km.toFixed(1)} km
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {typeof stock.distance_km === 'number' && (
+            <span className="font-mono text-slate-500" dir="ltr">
+              {stock.distance_km.toFixed(1)} km
+            </span>
+          )}
+          {clickable && (
+            <span className="inline-flex items-center gap-1 font-bold text-mawarid-700">
+              <span>التفاصيل</span>
+              <Icons.ArrowLeft className="w-3.5 h-3.5" />
+            </span>
+          )}
+        </div>
       </div>
     </article>
   )

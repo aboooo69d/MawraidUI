@@ -11,6 +11,7 @@ export const ROUTES = {
   ADMIN_ADDRESSES: 'admin-addresses',
   // ── استكشاف المخزون للمستفيدين والإدارة ──
   CONSUMER_STOCKS: 'consumer-stocks',
+  CONSUMER_STOCK_DETAILS: 'consumer-stock-details',
   // ── ميزة المخزون (للمزود فقط) ──
   STOCK_CREATE: 'stock-create',
   STOCK_DASHBOARD: 'stock-dashboard',

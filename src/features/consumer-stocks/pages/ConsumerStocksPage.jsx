@@ -158,7 +158,11 @@ export default function ConsumerStocksPage({ go, onSessionExpired }) {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {stocks.map((stock) => (
-              <ConsumerStockCard key={stock.id} stock={stock} />
+              <ConsumerStockCard
+                key={stock.id}
+                stock={stock}
+                onSelect={(selected) => go(ROUTES.CONSUMER_STOCK_DETAILS, { stockId: selected.id })}
+              />
             ))}
           </div>
         )}

@@ -70,7 +70,7 @@ export function useConsumerStocks({ isConsumer = true, onSessionExpired } = {}) 
 
     try {
       const [defAddr, allAddrs] = await Promise.all([
-        addressesApi.getMyDefault(),
+        addressesApi.getMyDefaultCached(),
         addressesApi.listMine().catch(() => []),
       ])
 
