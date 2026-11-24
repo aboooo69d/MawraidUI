@@ -1,12 +1,15 @@
 // ═══════════ Auth Context — حالة الجلسة والمستخدم ═══════════
 import { createContext, useCallback, useContext, useState } from 'react'
-import { authApi } from '../../services/api'
+import { addressesApi, authApi } from '../../services/api'
 
 const AuthCtx = createContext(null)
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
-  const clearSession = useCallback(() => setUser(null), [])
+  const clearSession = useCallback(() => {
+    addressesApi.clearDefaultAddressCache()
+    setUser(null)
+  }, [])
 
   async function login(phone, password, turnstileToken) {
     const u = await authApi.login(phone, password, turnstileToken)

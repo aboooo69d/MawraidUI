@@ -251,3 +251,40 @@ describe('stockApi.getStocks — استكشاف المخزون للمستفيد�
     await expect(stockApi.getStocks()).rejects.toMatchObject({ status: 403, code: 1107 })
   })
 })
+
+describe('stockApi.getConsumerStockById — جلب مخزون بالمعرّف للمستفيدين', () => {
+  it('يرسل GET /api/v1/stocks/:stock_id مع credentials: include ويرجع بيانات المخزون', async () => {
+    const sample = {
+      id: 'e4226f8b-f41e-42ef-8ba0-04470295cb45',
+      available: 85,
+      pending_orders: 3,
+      completed_orders: 42,
+      address: "Al-Zubairi Street, Sana'a",
+      location: { lat: 15.3694, lng: 44.191 },
+    }
+    const fetchMock = vi.fn(async () => ok(sample))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const res = await stockApi.getConsumerStockById(sample.id)
+
+    expect(res).toEqual(sample)
+    const [url, opts] = fetchMock.mock.calls[0]
+    expect(url).toBe(`/api/v1/stocks/${sample.id}`)
+    expect(opts.method).toBe('GET')
+    expect(opts.credentials).toBe('include')
+  })
+
+  it('يرمي ApiError عند 404 لمخزون غير موجود', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        jsonResponse({ success: false, error: { code: 1600, message: 'stock not found' } }, 404)
+      )
+    )
+
+    await expect(stockApi.getConsumerStockById('missing-id')).rejects.toMatchObject({
+      status: 404,
+      code: 1600,
+    })
+  })
+})

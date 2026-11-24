@@ -44,6 +44,9 @@ export const stockApi = {
   updateStockUnit: (stockId, unitId, payload) =>
     request(`${STOCKS_ME}/${stockId}/units/${unitId}`, { method: 'PATCH', body: payload }),
 
+  // جلب مخزون بالمعرّف للمستفيدين والإدارة (GET /api/v1/stocks/:stock_id)
+  getConsumerStockById: (stockId) => request(`/stocks/${encodeURIComponent(stockId)}`),
+
   // استكشاف المخزون المتاح للمستفيدين والإدارة (GET /api/v1/stocks)
   // يُرجع { data, meta } مع دعم الفلاتر والفرز الجغرافي.
   getStocks: async (filters = {}) => {

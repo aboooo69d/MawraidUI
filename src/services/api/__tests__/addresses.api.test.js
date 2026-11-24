@@ -2,7 +2,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { addressesApi } from '../modules/addresses.api'
 import { apiError, HOME, OFFICE, ok, OWNER_ID } from '../../../features/addresses/__tests__/fixtures'
 
-afterEach(() => vi.unstubAllGlobals())
+afterEach(() => {
+  addressesApi.clearDefaultAddressCache()
+  vi.unstubAllGlobals()
+})
 
 describe('Nova Address API with mocked fetch', () => {
   it.each([
@@ -60,5 +63,21 @@ describe('Nova Address API with mocked fetch', () => {
     vi.stubGlobal('fetch', vi.fn(async () => Response.json({ success: true })))
     await expect(addressesApi.listMine()).rejects.toThrow('تعذر قراءة بيانات العناوين')
     await expect(addressesApi.create({})).rejects.toThrow('تعذر قراءة بيانات العناوين')
+  })
+
+  it('caches the default address across calls and updates when a new default is created', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(ok(HOME))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(addressesApi.getMyDefaultCached()).resolves.toEqual(HOME)
+    await expect(addressesApi.getMyDefaultCached()).resolves.toEqual(HOME)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+
+    const newDefault = { ...OFFICE, is_default: true }
+    fetchMock.mockResolvedValueOnce(ok(newDefault))
+    await expect(addressesApi.create({ title: newDefault.title, description: newDefault.description, location: newDefault.location, is_default: true })).resolves.toEqual(newDefault)
+
+    await expect(addressesApi.getMyDefaultCached()).resolves.toEqual(newDefault)
+    expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 })
