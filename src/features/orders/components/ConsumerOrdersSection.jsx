@@ -68,7 +68,7 @@ export default function ConsumerOrdersSection({ go, showToast, onSessionExpired 
             onClick={loadRecentOrders}
             disabled={loading}
             aria-label="تحديث الطلبات"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-canvas hover:bg-slate-50 text-slate-700 text-xs font-bold transition cursor-pointer disabled:opacity-50"
           >
             <Icons.Refresh className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">تحديث</span>
@@ -77,7 +77,7 @@ export default function ConsumerOrdersSection({ go, showToast, onSessionExpired 
           <button
             type="button"
             onClick={() => go(ROUTES.CONSUMER_ORDERS)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-mawarid-700 hover:bg-mawarid-800 text-white text-xs font-bold transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-mawarid-700 hover:bg-mawarid-800 text-on-accent text-xs font-bold transition cursor-pointer"
           >
             <span>عرض كل الطلبات</span>
             <Icons.ArrowLeft className="w-3.5 h-3.5" />
@@ -86,19 +86,19 @@ export default function ConsumerOrdersSection({ go, showToast, onSessionExpired 
       </div>
 
       {loading ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center space-y-2.5">
+        <div className="rounded-2xl border border-slate-200 bg-canvas p-8 text-center space-y-2.5">
           <div className="w-7 h-7 mx-auto border-3 border-mawarid-200 border-t-mawarid-700 rounded-full animate-spin" />
           <p className="text-xs font-bold text-slate-500">جارٍ تحميل أحدث طلباتك…</p>
         </div>
       ) : err ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3">
+        <div className="rounded-2xl border border-slate-200 bg-canvas p-5 space-y-3">
           <ErrorBanner err={err} />
           <SecondaryBtn onClick={loadRecentOrders} className="text-xs">
             إعادة المحاولة
           </SecondaryBtn>
         </div>
       ) : orders.length === 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center space-y-3 shadow-xs">
+        <div className="rounded-2xl border border-slate-200 bg-canvas p-8 text-center space-y-3 shadow-xs">
           <div className="w-12 h-12 mx-auto rounded-2xl bg-mawarid-50 text-mawarid-700 flex items-center justify-center">
             <Icons.ShoppingBag className="w-6 h-6" />
           </div>
@@ -110,7 +110,7 @@ export default function ConsumerOrdersSection({ go, showToast, onSessionExpired 
             <button
               type="button"
               onClick={() => go(ROUTES.CONSUMER_STOCKS)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-mawarid-700 hover:bg-mawarid-800 text-white text-xs font-bold transition cursor-pointer shadow-sm"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-mawarid-700 hover:bg-mawarid-800 text-on-accent text-xs font-bold transition cursor-pointer shadow-sm"
             >
               <Icons.Box className="w-4 h-4" />
               <span>استكشاف المخزون وإنشاء طلب</span>

@@ -1,7 +1,7 @@
 // ═══════════ شاشة التحقق OTP — POST /verify-phone + resend ═══════════
 import { useEffect, useRef, useState } from 'react'
 import { authApi } from '../../../services/api'
-import { Icons, BrandLogo, BackBtn, ErrorBanner, InfoBanner, PrimaryBtn } from '../../../shared/components/ui'
+import { Icons, BrandLogo, BackBtn, ErrorBanner, InfoBanner, PrimaryBtn, ThemeToggle } from '../../../shared/components/ui'
 import TurnstileWidget from '../components/TurnstileWidget'
 
 export default function Otp({ go, phone }) {
@@ -74,19 +74,22 @@ export default function Otp({ go, phone }) {
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 flex flex-col justify-between">
       <div className="max-w-md w-full mx-auto">
-        <div className="flex items-center justify-between pb-6 mb-2">
-          <div className="cursor-pointer" onClick={() => go('home')}>
+        <div className="flex items-center justify-between gap-2 pb-6 mb-2">
+          <button type="button" className="min-h-11 rounded-lg" aria-label="موارد — الرئيسية" onClick={() => go('home')}>
             <BrandLogo size="sm" />
+          </button>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <ThemeToggle />
+            <BackBtn onClick={() => go('login')} label="تسجيل الدخول" />
           </div>
-          <BackBtn onClick={() => go('login')} label="تسجيل الدخول" />
         </div>
 
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-xl p-6 sm:p-8 fade-in text-center">
+        <div className="bg-canvas rounded-3xl border border-slate-200 mw-auth-card shadow-card fade-in text-center">
           <div className="w-14 h-14 mx-auto rounded-2xl bg-sky-50 text-sky-700 flex items-center justify-center mb-4">
             <Icons.Shield className="w-8 h-8" />
           </div>
 
-          <h1 className="text-2xl font-black text-slate-900 mb-1">التحقق من رقم الجوال</h1>
+          <h1 className="mw-h1 text-slate-900 mb-1">التحقق من رقم الجوال</h1>
           <p className="text-xs text-slate-500 mb-6">
             خطوة أمان أساسية لتأكيد ملكية رقم الهاتف وإصدار بطاقة المستفيد الرقمية
           </p>
@@ -108,7 +111,7 @@ export default function Otp({ go, phone }) {
                     onKeyDown={(e) => onKeyDown(i, e)}
                     onChange={(e) => onDigit(i, e.target.value)}
                     className={`w-12 h-14 sm:w-13 sm:h-16 rounded-xl border-2 text-center text-xl sm:text-2xl font-black font-mono outline-none transition ${
-                      d ? 'border-mawarid-600 bg-mawarid-50/50 text-mawarid-900' : 'border-slate-200 bg-slate-50 focus:border-mawarid-500 focus:bg-white'
+                      d ? 'border-mawarid-600 bg-mawarid-50/50 text-mawarid-900' : 'border-slate-200 bg-slate-50 focus:border-mawarid-500 focus:bg-canvas'
                     }`}
                   />
                 ))}

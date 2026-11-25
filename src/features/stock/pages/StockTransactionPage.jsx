@@ -73,21 +73,21 @@ export default function StockTransactionPage({ go, showToast, stockId, direction
   // ── حالات المخزون ──
   if (status === 'loading') {
     return (
-      <StockPage title={isIn ? 'إضافة كمية' : 'سحب كمية'} go={go} backTo={ROUTES.STOCK_DASHBOARD} backParams={{ stockId }} backLabel="لوحة المخزون">
+      <StockPage resourceSlug={stock?.type?.slug} title={isIn ? 'إضافة كمية' : 'سحب كمية'} go={go} backTo={ROUTES.STOCK_DASHBOARD} backParams={{ stockId }} backLabel="لوحة المخزون">
         <StockLoading />
       </StockPage>
     )
   }
   if (status === 'error') {
     return (
-      <StockPage title={isIn ? 'إضافة كمية' : 'سحب كمية'} go={go} backTo={ROUTES.STOCK_DASHBOARD} backParams={{ stockId }} backLabel="لوحة المخزون">
+      <StockPage resourceSlug={stock?.type?.slug} title={isIn ? 'إضافة كمية' : 'سحب كمية'} go={go} backTo={ROUTES.STOCK_DASHBOARD} backParams={{ stockId }} backLabel="لوحة المخزون">
         {isSessionExpired(err) ? <SessionExpiredState go={go} /> : <StockErrorState err={err} onRetry={reload} />}
       </StockPage>
     )
   }
   if (status === 'empty') {
     return (
-      <StockPage title={isIn ? 'إضافة كمية' : 'سحب كمية'} go={go} backTo={ROUTES.STOCK_DASHBOARD} backParams={{ stockId }} backLabel="لوحة المخزون">
+      <StockPage resourceSlug={stock?.type?.slug} title={isIn ? 'إضافة كمية' : 'سحب كمية'} go={go} backTo={ROUTES.STOCK_DASHBOARD} backParams={{ stockId }} backLabel="لوحة المخزون">
         <StockEmptyState go={go} />
       </StockPage>
     )
@@ -96,7 +96,7 @@ export default function StockTransactionPage({ go, showToast, stockId, direction
   const title = isIn ? 'إضافة كمية (وارد)' : 'سحب كمية (منصرف)'
 
   return (
-    <StockPage title={title} subtitle="حركة مخزنية" go={go} backTo={ROUTES.STOCK_DASHBOARD} backParams={{ stockId }} backLabel="لوحة المخزون">
+    <StockPage resourceSlug={stock?.type?.slug} title={title} subtitle="حركة مخزنية" go={go} backTo={ROUTES.STOCK_DASHBOARD} backParams={{ stockId }} backLabel="لوحة المخزون">
       {sessionExpired ? (
         <SessionExpiredState go={go} />
       ) : (
@@ -109,7 +109,7 @@ export default function StockTransactionPage({ go, showToast, stockId, direction
           >
             <span
               className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                isIn ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'
+                isIn ? 'bg-emerald-solid text-white' : 'bg-rose-solid text-white'
               }`}
             >
               {isIn ? <Icons.Plus className="w-5 h-5" /> : <Icons.Minus className="w-5 h-5" />}
@@ -131,14 +131,14 @@ export default function StockTransactionPage({ go, showToast, stockId, direction
 
           <form onSubmit={submit} className="space-y-4" noValidate>
             {/* ── الوحدة ── */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+            <div className="rounded-2xl border border-slate-200 bg-canvas p-4 sm:p-5">
               <Label req htmlFor="tx-unit">الوحدة</Label>
               <select
                 id="tx-unit"
                 value={unitId}
                 onChange={(e) => setUnitId(e.target.value)}
                 aria-invalid={submitted && !!check.errors.unit}
-                className={`w-full min-h-[48px] rounded-xl border bg-white px-3.5 text-slate-800 text-sm font-semibold outline-none transition shadow-sm focus:ring-2 focus:ring-mawarid-600/20 ${
+                className={`w-full min-h-[48px] rounded-xl border bg-canvas px-3.5 text-slate-800 text-sm font-semibold outline-none transition shadow-sm focus:ring-2 focus:ring-mawarid-600/20 ${
                   submitted && check.errors.unit ? 'border-rose-300 bg-rose-50/50' : 'border-slate-200 hover:border-slate-300 focus:border-mawarid-600'
                 }`}
               >
@@ -163,7 +163,7 @@ export default function StockTransactionPage({ go, showToast, stockId, direction
             </div>
 
             {/* ── الكمية ── */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+            <div className="rounded-2xl border border-slate-200 bg-canvas p-4 sm:p-5">
               <Label req htmlFor="tx-amount">الكمية (عدد صحيح موجب)</Label>
               <TextInput
                 id="tx-amount"
@@ -178,7 +178,7 @@ export default function StockTransactionPage({ go, showToast, stockId, direction
             </div>
 
             {/* ── الوصف ── */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+            <div className="rounded-2xl border border-slate-200 bg-canvas p-4 sm:p-5">
               <div className="flex items-center justify-between">
                 <Label htmlFor="tx-desc">الوصف (اختياري)</Label>
                 <span className={`text-[11px] font-bold ${description.length > DESC_MAX ? 'text-rose-600' : 'text-slate-400'}`} dir="ltr">
@@ -192,7 +192,7 @@ export default function StockTransactionPage({ go, showToast, stockId, direction
                 rows={3}
                 maxLength={DESC_MAX + 1}
                 placeholder="مثال: توريد 5 كراتين — فاتورة شراء #102"
-                className={`w-full rounded-xl border bg-white px-3.5 py-3 text-slate-800 text-sm font-medium outline-none transition shadow-sm placeholder:text-slate-400 focus:ring-2 focus:ring-mawarid-600/20 resize-y ${
+                className={`w-full rounded-xl border bg-canvas px-3.5 py-3 text-slate-800 text-sm font-medium outline-none transition shadow-sm placeholder:text-slate-400 focus:ring-2 focus:ring-mawarid-600/20 resize-y ${
                   submitted && check.errors.description ? 'border-rose-300 bg-rose-50/50' : 'border-slate-200 hover:border-slate-300 focus:border-mawarid-600'
                 }`}
               />

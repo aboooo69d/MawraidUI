@@ -1,7 +1,7 @@
 // ═══════════ شاشة تفاصيل طلب وارد لمزود الخدمة مع إجراءات القبول والرفض والإتمام ═══════════
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ordersApi } from '../../../services/api'
-import { BackBtn, ErrorBanner, Icons, SecondaryBtn } from '../../../shared/components/ui'
+import { BackBtn, ErrorBanner, Icons, SecondaryBtn, ThemeToggle } from '../../../shared/components/ui'
 import LocationPicker from '../../../shared/components/ui/LocationPicker'
 import { ROUTES } from '../../../shared/constants/routes'
 import {
@@ -135,12 +135,12 @@ export default function ProviderOrderDetailsPage({
   return (
     <div dir="rtl" className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans">
       {/* ── الترويسة ── */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 min-w-0">
+      <header className="bg-canvas border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:justify-between">
+          <div className="contents sm:flex sm:items-center sm:gap-2 sm:min-w-0">
             <BackBtn onClick={() => go(backTo, backParams)} label={backLabel} />
-            <div className="min-w-0">
-              <h1 className="text-lg sm:text-xl font-black text-slate-900 truncate">
+            <div className="col-span-2 row-start-2 min-w-0">
+              <h1 className="text-base sm:text-xl font-extrabold text-slate-900 leading-tight">
                 تفاصيل الطلب الوارد
               </h1>
               {order?.order_number && (
@@ -151,28 +151,31 @@ export default function ProviderOrderDetailsPage({
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={loadOrder}
-            disabled={loading}
-            aria-label="تحديث بيانات الطلب"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition cursor-pointer disabled:opacity-50"
-          >
-            <Icons.Refresh className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">تحديث</span>
-          </button>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <ThemeToggle />
+            <button
+              type="button"
+              onClick={loadOrder}
+              disabled={loading}
+              aria-label="تحديث بيانات الطلب"
+              className="inline-flex min-h-11 min-w-11 justify-center items-center gap-1.5 px-2 sm:px-3 py-2 rounded-xl border border-slate-200 bg-canvas hover:bg-slate-50 text-slate-700 text-xs font-bold transition cursor-pointer disabled:opacity-50"
+            >
+              <Icons.Refresh className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">تحديث</span>
+            </button>
+          </div>
         </div>
       </header>
 
       {/* ── المحتوى ── */}
       <main className="max-w-4xl w-full mx-auto px-4 sm:px-6 py-6 flex-1 space-y-5 text-right">
         {loading ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center space-y-3">
+          <div className="rounded-2xl border border-slate-200 bg-canvas p-10 text-center space-y-3">
             <div className="w-8 h-8 mx-auto border-3 border-mawarid-200 border-t-mawarid-700 rounded-full animate-spin" />
             <p className="text-sm font-bold text-slate-600">جارٍ تحميل تفاصيل الطلب…</p>
           </div>
         ) : err ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4">
+          <div className="rounded-2xl border border-slate-200 bg-canvas p-6 space-y-4">
             <ErrorBanner err={err} />
             <div className="flex flex-wrap gap-2">
               <SecondaryBtn onClick={loadOrder}>إعادة المحاولة</SecondaryBtn>
@@ -180,7 +183,7 @@ export default function ProviderOrderDetailsPage({
             </div>
           </div>
         ) : !order ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center space-y-3">
+          <div className="rounded-2xl border border-slate-200 bg-canvas p-10 text-center space-y-3">
             <p className="text-sm font-bold text-slate-600">لم يتم العثور على هذا الطلب.</p>
             <SecondaryBtn onClick={() => go(ROUTES.PROVIDER_ORDERS)}>العودة للطلبات الواردة</SecondaryBtn>
           </div>
@@ -189,7 +192,7 @@ export default function ProviderOrderDetailsPage({
             <ErrorBanner err={actionErr} />
 
             {/* 1) بطاقة الملخص والإجراءات التنفيذية */}
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs space-y-5">
+            <section className="rounded-2xl border border-slate-200 bg-canvas p-5 sm:p-6 shadow-xs space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div className="space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
@@ -246,7 +249,7 @@ export default function ProviderOrderDetailsPage({
                         type="button"
                         onClick={handleAccept}
                         disabled={actionBusy}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-sm cursor-pointer disabled:opacity-60"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-solid hover:bg-emerald-solid/90 text-white text-xs font-bold transition shadow-sm cursor-pointer disabled:opacity-60"
                       >
                         {actionBusy ? (
                           <Icons.Refresh className="w-4 h-4 animate-spin" />
@@ -273,7 +276,7 @@ export default function ProviderOrderDetailsPage({
                       type="button"
                       onClick={handleComplete}
                       disabled={actionBusy}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-mawarid-700 hover:bg-mawarid-800 text-white text-xs font-bold transition shadow-sm cursor-pointer disabled:opacity-60"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-mawarid-700 hover:bg-mawarid-800 text-on-accent text-xs font-bold transition shadow-sm cursor-pointer disabled:opacity-60"
                     >
                       {actionBusy ? (
                         <Icons.Refresh className="w-4 h-4 animate-spin" />
@@ -288,7 +291,7 @@ export default function ProviderOrderDetailsPage({
             </section>
 
             {/* 2) تفاصيل الكمية وصفة المستفيد */}
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs space-y-4">
+            <section className="rounded-2xl border border-slate-200 bg-canvas p-5 sm:p-6 shadow-xs space-y-4">
               <h3 className="text-base font-black text-slate-900">تفاصيل الحجز وصفة المستفيد</h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
@@ -347,7 +350,7 @@ export default function ProviderOrderDetailsPage({
 
             {/* 3) موقع وعنوان المستفيد للتوصيل */}
             {order.address && (
-              <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs space-y-4">
+              <section className="rounded-2xl border border-slate-200 bg-canvas p-5 sm:p-6 shadow-xs space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
                     <h3 className="text-base font-black text-slate-900">

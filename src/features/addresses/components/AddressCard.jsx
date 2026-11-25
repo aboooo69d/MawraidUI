@@ -3,7 +3,7 @@ import { Icons, SecondaryBtn } from '../../../shared/components/ui'
 export default function AddressCard({ address, onDetails, showOwner = false, detailsLabel = 'عرض التفاصيل' }) {
   const { title, description, location, is_default: isDefault } = address
   return (
-    <article className={`rounded-2xl border bg-white p-4 sm:p-5 space-y-3 shadow-xs ${isDefault ? 'border-mawarid-200' : 'border-slate-200'}`}>
+    <article className={`rounded-2xl border bg-canvas p-4 sm:p-5 space-y-3 shadow-xs ${isDefault ? 'border-mawarid-200' : 'border-slate-200'}`}>
       <div className="flex flex-wrap items-center gap-2">
         <Icons.MapPin className="w-5 h-5 shrink-0 text-mawarid-700" />
         <h2 dir="auto" className="min-w-0 break-words font-black text-slate-900">{title || 'عنوان محفوظ'}</h2>

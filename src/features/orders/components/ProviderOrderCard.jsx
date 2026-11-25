@@ -33,7 +33,7 @@ export default function ProviderOrderCard({
     (Number(order.address?.lat) !== 0 || Number(order.address?.lng) !== 0)
 
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-xs hover:border-mawarid-300 transition space-y-3.5 text-right flex flex-col justify-between">
+    <article className="rounded-2xl border border-slate-200 bg-canvas p-4 sm:p-5 shadow-xs hover:border-mawarid-300 transition space-y-3.5 text-right flex flex-col justify-between">
       <div className="space-y-3.5">
         {/* السطر العلوي: رقم الطلب + الحالة + الإجمالي */}
         <div className="flex flex-wrap items-start justify-between gap-2">
@@ -163,7 +163,7 @@ export default function ProviderOrderCard({
                   type="button"
                   onClick={() => onAccept(order)}
                   disabled={actionLoading}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs cursor-pointer disabled:opacity-60"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-solid hover:bg-emerald-solid/90 text-white text-xs font-bold transition shadow-xs cursor-pointer disabled:opacity-60"
                 >
                   {actionLoading ? (
                     <Icons.Refresh className="w-3.5 h-3.5 animate-spin" />
@@ -193,7 +193,7 @@ export default function ProviderOrderCard({
               type="button"
               onClick={() => onComplete(order)}
               disabled={actionLoading}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-mawarid-700 hover:bg-mawarid-800 text-white text-xs font-bold transition shadow-xs cursor-pointer disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-mawarid-700 hover:bg-mawarid-800 text-on-accent text-xs font-bold transition shadow-xs cursor-pointer disabled:opacity-60"
             >
               {actionLoading ? (
                 <Icons.Refresh className="w-3.5 h-3.5 animate-spin" />

@@ -18,7 +18,7 @@ export default function AddressLocationBar({
 }) {
   if (addressLoading) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs flex items-center gap-3 text-xs text-slate-500">
+      <div className="rounded-2xl border border-slate-200 bg-canvas p-4 shadow-xs flex items-center gap-3 text-xs text-slate-500">
         <span className="w-4 h-4 border-2 border-mawarid-200 border-t-mawarid-700 rounded-full animate-spin shrink-0" />
         <span>جارٍ تحميل عنوانك الافتراضي لحساب المسافة إلى أقرب مخزون…</span>
       </div>
@@ -28,7 +28,7 @@ export default function AddressLocationBar({
   return (
     <section
       aria-label="موقع حساب المسافة"
-      className="rounded-2xl border border-mawarid-200 bg-white p-4 sm:p-5 shadow-xs space-y-3"
+      className="rounded-2xl border border-mawarid-200 bg-canvas p-4 sm:p-5 shadow-xs space-y-3"
     >
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div className="flex items-start gap-3 min-w-0">

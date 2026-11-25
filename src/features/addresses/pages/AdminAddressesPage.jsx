@@ -49,7 +49,7 @@ export default function AdminAddressesPage({ go, onSessionExpired }) {
   return (
     <AddressPage title="عرض عناوين المواطنين" onBack={() => go(ROUTES.DASHBOARD)}>
       <div className="grid gap-3 sm:grid-cols-2">
-        <form onSubmit={submitUser} className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3" noValidate>
+        <form onSubmit={submitUser} className="rounded-2xl border border-slate-200 bg-canvas p-4 space-y-3" noValidate>
           <div>
             <Label htmlFor="lookup-user-id">معرّف المستخدم (UUID)</Label>
             <TextInput
@@ -72,7 +72,7 @@ export default function AdminAddressesPage({ go, onSessionExpired }) {
           </div>
         </form>
 
-        <form onSubmit={submitAddress} className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3" noValidate>
+        <form onSubmit={submitAddress} className="rounded-2xl border border-slate-200 bg-canvas p-4 space-y-3" noValidate>
           <div>
             <Label htmlFor="lookup-address-id">معرّف العنوان (UUID)</Label>
             <TextInput

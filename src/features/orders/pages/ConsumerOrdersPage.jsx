@@ -1,7 +1,7 @@
 // ═══════════ شاشة قائمة طلبات المستفيد مع الفلترة والترقيم وإلغاء الطلب ═══════════
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ordersApi } from '../../../services/api'
-import { BackBtn, ErrorBanner, Icons, SecondaryBtn } from '../../../shared/components/ui'
+import { BackBtn, ErrorBanner, Icons, SecondaryBtn, ThemeToggle } from '../../../shared/components/ui'
 import { ROUTES } from '../../../shared/constants/routes'
 import {
   CONSUMER_TYPE_OPTIONS,
@@ -96,9 +96,9 @@ export default function ConsumerOrdersPage({
   return (
     <div dir="rtl" className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans">
       {/* ── الترويسة ── */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 min-w-0">
+      <header className="bg-canvas border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:justify-between">
+          <div className="contents sm:flex sm:items-center sm:gap-2 sm:min-w-0">
             <BackBtn
               onClick={() =>
                 initialStockId
@@ -107,30 +107,31 @@ export default function ConsumerOrdersPage({
               }
               label={initialStockId ? 'تفاصيل المخزون' : 'لوحة التحكم'}
             />
-            <div className="min-w-0">
-              <h1 className="text-lg sm:text-xl font-black text-slate-900 truncate">طلباتي</h1>
-              <p className="text-xs text-slate-500 truncate">
+            <div className="col-span-2 row-start-2 min-w-0">
+              <h1 className="text-base sm:text-xl font-extrabold text-slate-900 leading-tight">طلباتي</h1>
+              <p className="text-xs text-slate-500">
                 متابعة حالة الحجوزات والطلبات وإدارتها
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1.5">
+            <ThemeToggle />
             <button
               type="button"
               onClick={() => go(ROUTES.CONSUMER_STOCKS)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-mawarid-700 hover:bg-mawarid-800 text-white text-xs font-bold transition cursor-pointer"
+              aria-label="طلب جديد"
+              className="inline-flex min-h-11 min-w-11 justify-center items-center gap-1.5 px-2 sm:px-3 py-2 rounded-xl bg-mawarid-700 hover:bg-mawarid-800 text-on-accent text-xs font-bold transition cursor-pointer"
             >
               <Icons.Plus className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">طلب جديد</span>
             </button>
-
             <button
               type="button"
               onClick={loadOrders}
               disabled={loading}
               aria-label="تحديث قائمة الطلبات"
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition cursor-pointer disabled:opacity-50"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 px-2 sm:px-3 py-2 rounded-xl border border-slate-200 bg-canvas hover:bg-slate-50 text-slate-700 text-xs font-bold transition cursor-pointer disabled:opacity-50"
             >
               <Icons.Refresh className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">تحديث</span>
@@ -142,7 +143,7 @@ export default function ConsumerOrdersPage({
       {/* ── المحتوى ── */}
       <main className="max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 flex-1 space-y-5 text-right">
         {/* لوحة الفلاتر */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-xs space-y-4">
+        <section className="rounded-2xl border border-slate-200 bg-canvas p-4 sm:p-5 shadow-xs space-y-4">
           {/* فلتر حالة الطلب */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -174,7 +175,7 @@ export default function ConsumerOrdersPage({
                     }}
                     className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition cursor-pointer ${
                       active
-                        ? 'border-mawarid-700 bg-mawarid-700 text-white shadow-xs'
+                        ? 'border-mawarid-700 bg-mawarid-700 text-on-accent shadow-xs'
                         : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700'
                     }`}
                   >
@@ -198,7 +199,7 @@ export default function ConsumerOrdersPage({
                 className={`px-2.5 py-1 rounded-lg border text-xs font-bold transition cursor-pointer ${
                   consumerTypeFilter === ''
                     ? 'border-mawarid-600 bg-mawarid-50 text-mawarid-800'
-                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                    : 'border-slate-200 bg-canvas text-slate-600 hover:bg-slate-50'
                 }`}
               >
                 الكل
@@ -214,7 +215,7 @@ export default function ConsumerOrdersPage({
                   className={`px-2.5 py-1 rounded-lg border text-xs font-bold transition cursor-pointer ${
                     consumerTypeFilter === opt.value
                       ? 'border-mawarid-600 bg-mawarid-50 text-mawarid-800'
-                      : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                      : 'border-slate-200 bg-canvas text-slate-600 hover:bg-slate-50'
                   }`}
                 >
                   {opt.shortLabel}
@@ -256,17 +257,17 @@ export default function ConsumerOrdersPage({
 
         {/* القائمة */}
         {loading ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center space-y-3">
+          <div className="rounded-2xl border border-slate-200 bg-canvas p-10 text-center space-y-3">
             <div className="w-8 h-8 mx-auto border-3 border-mawarid-200 border-t-mawarid-700 rounded-full animate-spin" />
             <p className="text-sm font-bold text-slate-600">جارٍ تحميل قائمة الطلبات…</p>
           </div>
         ) : err ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4">
+          <div className="rounded-2xl border border-slate-200 bg-canvas p-6 space-y-4">
             <ErrorBanner err={err} />
             <SecondaryBtn onClick={loadOrders}>إعادة المحاولة</SecondaryBtn>
           </div>
         ) : orders.length === 0 ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center space-y-3">
+          <div className="rounded-2xl border border-slate-200 bg-canvas p-10 text-center space-y-3">
             <div className="w-12 h-12 mx-auto rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center">
               <Icons.ShoppingBag className="w-6 h-6" />
             </div>
@@ -283,7 +284,7 @@ export default function ConsumerOrdersPage({
                 <button
                   type="button"
                   onClick={() => go(ROUTES.CONSUMER_STOCKS)}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-mawarid-700 hover:bg-mawarid-800 text-white text-xs font-bold transition cursor-pointer"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-mawarid-700 hover:bg-mawarid-800 text-on-accent text-xs font-bold transition cursor-pointer"
                 >
                   <Icons.Box className="w-4 h-4" />
                   <span>استكشاف المخزون المتاح</span>

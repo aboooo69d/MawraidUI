@@ -99,7 +99,7 @@ export default function AddressForm({ addresses, onSaved, onSessionExpired }) {
   }
 
   return (
-    <form onSubmit={submit} className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-xs" noValidate>
+    <form onSubmit={submit} className="rounded-2xl border border-slate-200 bg-canvas p-4 sm:p-6 shadow-xs" noValidate>
       <ErrorBanner err={saveError} />
       <fieldset disabled={saving} className="min-w-0 space-y-5">
         <div>
@@ -127,7 +127,7 @@ export default function AddressForm({ addresses, onSaved, onSessionExpired }) {
             required
             aria-invalid={Boolean(errors.description)}
             aria-describedby={errors.description ? 'address-description-count address-description-error' : 'address-description-count'}
-            className="w-full rounded-xl border border-slate-300 bg-white p-3 text-slate-800 focus:ring-2 focus:ring-mawarid-500"
+            className="w-full rounded-xl border border-slate-300 bg-canvas p-3 text-slate-800 focus:ring-2 focus:ring-mawarid-500"
           />
           <p id="address-description-count" className="text-xs text-slate-600">{addressTextLength(description)} / {ADDRESS_LIMITS.description} حرف</p>
           {errors.description && <p id="address-description-error" className="mt-2 text-sm text-rose-700" role="alert">{errors.description}</p>}

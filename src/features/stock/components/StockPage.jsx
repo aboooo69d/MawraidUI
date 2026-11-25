@@ -1,10 +1,11 @@
 // ═══════════ قالب شاشة المخزون — ترويسة + محتوى عريض ═══════════
+import { getResourceTheme } from '../../../shared/constants/resources'
 import StockHeader from './StockHeader'
 import { ROUTES } from '../../../shared/constants/routes'
 
-export default function StockPage({ title, subtitle, go, backTo = ROUTES.DASHBOARD, backParams = {}, backLabel = 'رجوع', action, children }) {
+export default function StockPage({ title, subtitle, go, backTo = ROUTES.DASHBOARD, backParams = {}, backLabel = 'رجوع', action, resourceSlug, children }) {
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans">
+    <div data-resource={getResourceTheme(resourceSlug)} className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans">
       <StockHeader
         title={title}
         subtitle={subtitle}

@@ -144,7 +144,7 @@ export default function StockUnitsPage({ go, showToast, stockId }) {
   // ── حالات المخزون ──
   if (status === 'loading' || status === 'error' || status === 'empty') {
     return (
-      <StockPage title="إدارة الوحدات" subtitle="الوحدات ومعاملات التحويل" go={go} backTo={ROUTES.STOCK_DASHBOARD} backParams={{ stockId }} backLabel="لوحة المخزون">
+      <StockPage resourceSlug={stock?.type?.slug} title="إدارة الوحدات" subtitle="الوحدات ومعاملات التحويل" go={go} backTo={ROUTES.STOCK_DASHBOARD} backParams={{ stockId }} backLabel="لوحة المخزون">
         {status === 'loading' && <StockLoading />}
         {status === 'error' && (isSessionExpired(err) ? <SessionExpiredState go={go} /> : <StockErrorState err={err} onRetry={reload} />)}
         {status === 'empty' && <StockEmptyState go={go} />}
@@ -153,13 +153,13 @@ export default function StockUnitsPage({ go, showToast, stockId }) {
   }
 
   return (
-    <StockPage title="إدارة الوحدات" subtitle="الوحدات ومعاملات التحويل" go={go} backTo={ROUTES.STOCK_DASHBOARD} backParams={{ stockId }} backLabel="لوحة المخزون">
+    <StockPage resourceSlug={stock?.type?.slug} title="إدارة الوحدات" subtitle="الوحدات ومعاملات التحويل" go={go} backTo={ROUTES.STOCK_DASHBOARD} backParams={{ stockId }} backLabel="لوحة المخزون">
       {sessionExpired ? (
         <SessionExpiredState go={go} />
       ) : (
         <>
           {/* ── قائمة الوحدات ── */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-xs">
+          <div className="rounded-2xl border border-slate-200 bg-canvas p-4 sm:p-5 shadow-xs">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-black text-slate-900">وحدات المخزون</h2>
               <span className="text-[11px] font-bold text-slate-400">{units.length} وحدة</span>
@@ -229,7 +229,7 @@ export default function StockUnitsPage({ go, showToast, stockId }) {
                             type="button"
                             onClick={saveEdit}
                             disabled={saving}
-                            className="flex-1 min-h-[44px] rounded-xl bg-mawarid-700 text-white text-sm font-bold hover:bg-mawarid-800 transition shadow-md shadow-mawarid-900/15 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-mawarid-500"
+                            className="flex-1 min-h-[44px] rounded-xl bg-mawarid-700 text-on-accent text-sm font-bold hover:bg-mawarid-800 transition shadow-md shadow-mawarid-900/15 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-mawarid-500"
                           >
                             {saving ? (
                               <>
@@ -289,7 +289,7 @@ export default function StockUnitsPage({ go, showToast, stockId }) {
           </div>
 
           {/* ── إضافة وحدة فرعية ── */}
-          <form onSubmit={addUnit} className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-xs space-y-3" noValidate>
+          <form onSubmit={addUnit} className="rounded-2xl border border-slate-200 bg-canvas p-4 sm:p-5 shadow-xs space-y-3" noValidate>
             <h2 className="text-sm font-black text-slate-900">إضافة وحدة فرعية جديدة</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>

@@ -1,5 +1,6 @@
 // ═══════════ نافذة سفلية (Bottom Sheet) لإنشاء طلب جديد من المخزون ═══════════
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useModalFocus } from '../../../shared/hooks/useModalFocus'
 import { useAuth } from '../../auth/hooks/useAuth'
 import { addressesApi, ordersApi } from '../../../services/api'
 import { ErrorBanner, Icons, Label, PrimaryBtn, SecondaryBtn } from '../../../shared/components/ui'
@@ -30,6 +31,7 @@ export default function CreateOrderSheet({
   onSessionExpired,
 }) {
   const { user } = useAuth()
+  const dialogRef = useModalFocus(open && Boolean(stock))
 
   const units = useMemo(() => (Array.isArray(stock?.units) ? stock.units : []), [stock])
   const mainUnit = useMemo(() => units.find((u) => u.is_main) || units[0] || null, [units])
@@ -204,19 +206,21 @@ export default function CreateOrderSheet({
     <div
       dir="rtl"
       className="fixed inset-0 z-[1200] flex items-end justify-center sm:items-end"
+      ref={dialogRef}
+      tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-labelledby="create-order-sheet-title"
     >
       {/* خلفية معتمة */}
       <div
-        className="fixed inset-0 bg-slate-900/55 backdrop-blur-[2px] transition-opacity"
+        className="fixed inset-0 bg-scrim/55 transition-opacity"
         onClick={() => !submitting && onClose?.()}
         aria-hidden="true"
       />
 
       {/* حاوية النافذة السفلية */}
-      <div className="sheet-up relative z-10 w-full max-w-2xl bg-white rounded-t-3xl border-t border-x border-slate-200 shadow-2xl max-h-[92vh] flex flex-col overflow-hidden text-right">
+      <div className="sheet-up relative z-10 w-full max-w-2xl bg-canvas rounded-t-3xl border-t border-x border-slate-200 shadow-2xl max-h-[92dvh] flex flex-col overflow-hidden text-right">
         {/* مقبض علوي وشريط العنوان */}
         <div className="px-5 sm:px-6 pt-3 pb-4 border-b border-slate-100 shrink-0">
           <div className="w-12 h-1.5 rounded-full bg-slate-200 mx-auto mb-3" aria-hidden="true" />
@@ -239,7 +243,7 @@ export default function CreateOrderSheet({
               onClick={() => !submitting && onClose?.()}
               disabled={submitting}
               aria-label="إغلاق نافذة الطلب"
-              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition cursor-pointer disabled:opacity-50"
+              className="mw-button mw-icon-button rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition cursor-pointer disabled:opacity-50"
             >
               <Icons.Close className="w-4 h-4" />
             </button>
@@ -275,7 +279,7 @@ export default function CreateOrderSheet({
                           ? 'border-slate-200 bg-slate-50 opacity-55 cursor-not-allowed'
                           : isSelected
                           ? 'border-mawarid-600 bg-mawarid-50/60 ring-2 ring-mawarid-600/20 cursor-pointer'
-                          : 'border-slate-200 bg-white hover:border-mawarid-300 hover:bg-slate-50/50 cursor-pointer'
+                          : 'border-slate-200 bg-canvas hover:border-mawarid-300 hover:bg-slate-50/50 cursor-pointer'
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2 w-full">
@@ -342,7 +346,7 @@ export default function CreateOrderSheet({
                 dir="ltr"
                 value={quantity}
                 onChange={(e) => handleQuantityInput(e.target.value)}
-                className="flex-1 min-h-[48px] rounded-xl border border-slate-200 bg-white px-4 text-center font-mono text-lg font-black text-slate-900 outline-none focus:border-mawarid-600 focus:ring-2 focus:ring-mawarid-600/20"
+                className="flex-1 min-h-[48px] rounded-xl border border-slate-200 bg-canvas px-4 text-center font-mono text-lg font-black text-slate-900 outline-none focus:border-mawarid-600 focus:ring-2 focus:ring-mawarid-600/20"
               />
 
               <button
@@ -386,12 +390,12 @@ export default function CreateOrderSheet({
                         ? 'border-slate-200 bg-slate-50 opacity-50 cursor-not-allowed'
                         : isSelected
                         ? 'border-mawarid-600 bg-mawarid-50/60 ring-2 ring-mawarid-600/20 cursor-pointer'
-                        : 'border-slate-200 bg-white hover:border-mawarid-300 cursor-pointer'
+                        : 'border-slate-200 bg-canvas hover:border-mawarid-300 cursor-pointer'
                     }`}
                   >
                     <div
                       className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                        isSelected ? 'bg-mawarid-700 text-white' : 'bg-slate-100 text-slate-600'
+                        isSelected ? 'bg-mawarid-700 text-on-accent' : 'bg-slate-100 text-slate-600'
                       }`}
                     >
                       <Icon className="w-4 h-4" />
@@ -464,7 +468,7 @@ export default function CreateOrderSheet({
                       className={`w-full rounded-xl border p-3 text-right transition flex items-start justify-between gap-3 cursor-pointer ${
                         isSelected
                           ? 'border-mawarid-600 bg-mawarid-50/60 ring-2 ring-mawarid-600/20'
-                          : 'border-slate-200 bg-white hover:border-mawarid-300'
+                          : 'border-slate-200 bg-canvas hover:border-mawarid-300'
                       }`}
                     >
                       <div className="flex items-start gap-2.5 min-w-0">
@@ -493,8 +497,8 @@ export default function CreateOrderSheet({
                       <div
                         className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${
                           isSelected
-                            ? 'bg-mawarid-700 border-mawarid-700 text-white'
-                            : 'border-slate-300 bg-white'
+                            ? 'bg-mawarid-700 border-mawarid-700 text-on-accent'
+                            : 'border-slate-300 bg-canvas'
                         }`}
                       >
                         {isSelected && <Icons.Check className="w-3 h-3" />}
@@ -521,7 +525,7 @@ export default function CreateOrderSheet({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="مثال: يرجى الاتصال عند الوصول أو تحديد معلم قريب..."
-              className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-800 outline-none transition focus:border-mawarid-600 focus:ring-2 focus:ring-mawarid-600/20"
+              className="w-full rounded-xl border border-slate-200 bg-canvas p-3 text-xs text-slate-800 outline-none transition focus:border-mawarid-600 focus:ring-2 focus:ring-mawarid-600/20"
             />
           </div>
         </form>
@@ -537,7 +541,7 @@ export default function CreateOrderSheet({
               </div>
             </div>
 
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-canvas border border-slate-200 text-xs font-bold text-slate-700">
               <Icons.Check className="w-3.5 h-3.5 text-emerald-600" />
               <span>الدفع نقداً عند الاستلام</span>
             </span>

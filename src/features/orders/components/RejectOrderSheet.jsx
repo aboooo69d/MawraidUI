@@ -1,5 +1,6 @@
 // ═══════════ نافذة سفلية (Bottom Sheet) لرفض طلب وارد من قبل المزود ═══════════
 import { useEffect, useState } from 'react'
+import { useModalFocus } from '../../../shared/hooks/useModalFocus'
 import { ordersApi } from '../../../services/api'
 import { ErrorBanner, Icons, Label, SecondaryBtn } from '../../../shared/components/ui'
 import {
@@ -27,6 +28,7 @@ export default function RejectOrderSheet({
   const [err, setErr] = useState(null)
 
   const open = Boolean(order)
+  const dialogRef = useModalFocus(open)
 
   useEffect(() => {
     if (!open) return
@@ -88,17 +90,19 @@ export default function RejectOrderSheet({
     <div
       dir="rtl"
       className="fixed inset-0 z-[1200] flex items-end justify-center"
+      ref={dialogRef}
+      tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-labelledby="reject-order-sheet-title"
     >
       <div
-        className="fixed inset-0 bg-slate-900/55 backdrop-blur-[2px]"
+        className="fixed inset-0 bg-scrim/55"
         onClick={() => !submitting && onClose?.()}
         aria-hidden="true"
       />
 
-      <div className="sheet-up relative z-10 w-full max-w-lg bg-white rounded-t-3xl border-t border-x border-slate-200 shadow-2xl max-h-[90vh] flex flex-col overflow-hidden text-right">
+      <div className="sheet-up relative z-10 w-full max-w-lg bg-canvas rounded-t-3xl border-t border-x border-slate-200 shadow-2xl max-h-[90dvh] flex flex-col overflow-hidden text-right">
         <div className="px-5 sm:px-6 pt-3 pb-4 border-b border-slate-100">
           <div className="w-12 h-1.5 rounded-full bg-slate-200 mx-auto mb-3" aria-hidden="true" />
           <div className="flex items-start justify-between gap-3">
@@ -115,7 +119,7 @@ export default function RejectOrderSheet({
               onClick={() => !submitting && onClose?.()}
               disabled={submitting}
               aria-label="إغلاق"
-              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition cursor-pointer disabled:opacity-50"
+              className="mw-button mw-icon-button rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition cursor-pointer disabled:opacity-50"
             >
               <Icons.Close className="w-4 h-4" />
             </button>
@@ -167,7 +171,7 @@ export default function RejectOrderSheet({
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="مثال: خارج نطاق التوصيل أو انتهاء الدوام..."
-              className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-800 outline-none transition focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"
+              className="w-full rounded-xl border border-slate-200 bg-canvas p-3 text-xs text-slate-800 outline-none transition focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"
             />
           </div>
 
@@ -175,7 +179,7 @@ export default function RejectOrderSheet({
             <button
               type="submit"
               disabled={submitting}
-              className="flex-1 min-h-[48px] rounded-xl bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white text-sm font-bold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex-1 min-h-[48px] rounded-xl bg-rose-solid hover:bg-rose-solid/90 active:bg-rose-solid text-white text-sm font-bold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {submitting ? (
                 <>

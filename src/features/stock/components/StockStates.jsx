@@ -16,7 +16,7 @@ export function StockLoading({ label = 'جارٍ تحميل بيانات الم�
 // حالة الخطأ مع إعادة المحاولة (لا تُعامل أخطاء الخادم كبيانات فارغة)
 export function StockErrorState({ err, onRetry }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center fade-in">
+    <div className="rounded-2xl border border-slate-200 bg-canvas p-6 text-center fade-in">
       <div className="w-12 h-12 mx-auto rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center mb-3">
         <Icons.Alert className="w-6 h-6" aria-hidden="true" />
       </div>
@@ -59,7 +59,7 @@ export function SessionExpiredState({ go }) {
 // لا يوجد مخزون مسجّل — مع الإجراء الأساسي لإنشاء مخزون جديد
 export function StockEmptyState({ go }) {
   return (
-    <div className="rounded-2xl border border-dashed border-mawarid-300 bg-white p-6 text-center fade-in">
+    <div className="rounded-2xl border border-dashed border-mawarid-300 bg-canvas p-6 text-center fade-in">
       <div className="w-12 h-12 mx-auto rounded-xl bg-mawarid-50 text-mawarid-700 flex items-center justify-center mb-3">
         <Icons.Box className="w-6 h-6" aria-hidden="true" />
       </div>
@@ -68,7 +68,7 @@ export function StockEmptyState({ go }) {
       <button
         type="button"
         onClick={() => go(ROUTES.STOCK_CREATE)}
-        className="w-full min-h-[48px] rounded-xl bg-mawarid-700 hover:bg-mawarid-800 text-white text-sm font-bold transition shadow-md shadow-mawarid-900/15 cursor-pointer focus:outline-none focus:ring-2 focus:ring-mawarid-500 focus:ring-offset-2 flex items-center justify-center gap-2"
+        className="w-full min-h-[48px] rounded-xl bg-mawarid-700 hover:bg-mawarid-800 text-on-accent text-sm font-bold transition shadow-md shadow-mawarid-900/15 cursor-pointer focus:outline-none focus:ring-2 focus:ring-mawarid-500 focus:ring-offset-2 flex items-center justify-center gap-2"
       >
         <Icons.Plus className="w-4 h-4" aria-hidden="true" />
         <span>إضافة مخزون جديد</span>

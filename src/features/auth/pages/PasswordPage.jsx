@@ -2,7 +2,7 @@
 import { useRef, useState } from 'react'
 import { authApi } from '../../../services/api'
 import { PHONE_RE } from '../../../shared/constants/regex'
-import { Icons, BrandLogo, BackBtn, ErrorBanner, InfoBanner, Label, PhoneInput, TextInput, PrimaryBtn } from '../../../shared/components/ui'
+import { Icons, BrandLogo, BackBtn, ErrorBanner, InfoBanner, Label, PhoneInput, TextInput, PrimaryBtn, ThemeToggle } from '../../../shared/components/ui'
 import TurnstileWidget from '../components/TurnstileWidget'
 
 export function Forgot({ go }) {
@@ -36,19 +36,22 @@ export function Forgot({ go }) {
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 flex flex-col justify-between">
       <div className="max-w-md w-full mx-auto">
-        <div className="flex items-center justify-between pb-6 mb-2">
-          <div className="cursor-pointer" onClick={() => go('home')}>
+        <div className="flex items-center justify-between gap-2 pb-6 mb-2">
+          <button type="button" className="min-h-11 rounded-lg" aria-label="موارد — الرئيسية" onClick={() => go('home')}>
             <BrandLogo size="sm" />
+          </button>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <ThemeToggle />
+            <BackBtn onClick={() => go('login')} label="تسجيل الدخول" />
           </div>
-          <BackBtn onClick={() => go('login')} label="تسجيل الدخول" />
         </div>
 
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-xl p-6 sm:p-8 fade-in text-center">
+        <div className="bg-canvas rounded-3xl border border-slate-200 mw-auth-card shadow-card fade-in text-center">
           <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center mb-4">
             <Icons.Lock className="w-7 h-7" />
           </div>
 
-          <h1 className="text-2xl font-black text-slate-900 mb-1">استعادة كلمة المرور</h1>
+          <h1 className="mw-h1 text-slate-900 mb-1">استعادة كلمة المرور</h1>
           <p className="text-xs text-slate-500 mb-6">
             أدخل رقم هاتفك المسجل لاستلام رمز استعادة الحساب
           </p>
@@ -118,19 +121,22 @@ export function Reset({ go, phone }) {
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 flex flex-col justify-between">
       <div className="max-w-md w-full mx-auto">
-        <div className="flex items-center justify-between pb-6 mb-2">
-          <div className="cursor-pointer" onClick={() => go('home')}>
+        <div className="flex items-center justify-between gap-2 pb-6 mb-2">
+          <button type="button" className="min-h-11 rounded-lg" aria-label="موارد — الرئيسية" onClick={() => go('home')}>
             <BrandLogo size="sm" />
+          </button>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <ThemeToggle />
+            <BackBtn onClick={() => go('forgot')} label="رجوع" />
           </div>
-          <BackBtn onClick={() => go('forgot')} label="رجوع" />
         </div>
 
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-xl p-6 sm:p-8 fade-in text-center">
+        <div className="bg-canvas rounded-3xl border border-slate-200 mw-auth-card shadow-card fade-in text-center">
           <div className="w-14 h-14 mx-auto rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center mb-4">
             <Icons.Shield className="w-7 h-7" />
           </div>
 
-          <h1 className="text-2xl font-black text-slate-900 mb-1">تعيين كلمة مرور جديدة</h1>
+          <h1 className="mw-h1 text-slate-900 mb-1">تعيين كلمة مرور جديدة</h1>
           <p className="text-xs text-slate-500 mb-6">
             أدخل رمز الاستعادة المرسل إلى رقمك، ثم اختر كلمة مرور جديدة قوية
           </p>
@@ -162,7 +168,7 @@ export function Reset({ go, phone }) {
                 <button
                   type="button"
                   onClick={() => setShowPass(!showPass)}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer min-h-11 min-w-11 grid place-items-center"
                   aria-label={showPass ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
                 >
                   {showPass ? <Icons.EyeOff className="w-4 h-4" /> : <Icons.Eye className="w-4 h-4" />}

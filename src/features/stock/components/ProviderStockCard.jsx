@@ -1,6 +1,7 @@
 // ═══════════ بطاقة مخازن المزود في لوحة التحكم (Multi-Stock — للمزود فقط) ═══════════
 // تعرض قائمة مخازن المزود أو حالة فارغة، مع إبقاء زر «إضافة مخزون جديد» متاحاً دائماً.
 import { useEffect } from 'react'
+import { getResourceTheme } from '../../../shared/constants/resources'
 import { ROUTES } from '../../../shared/constants/routes'
 import { Icons } from '../../../shared/components/ui'
 import { useMyStocks } from '../hooks/useMyStocks'
@@ -31,7 +32,7 @@ export default function ProviderStockCard({ go, refreshTrigger = 0 }) {
         <button
           type="button"
           onClick={() => go(ROUTES.STOCK_CREATE)}
-          className="inline-flex items-center gap-2 min-h-[42px] px-4 rounded-xl bg-mawarid-700 hover:bg-mawarid-800 text-white text-xs font-bold transition shadow-md shadow-mawarid-900/15 cursor-pointer focus:outline-none focus:ring-2 focus:ring-mawarid-500 focus:ring-offset-2"
+          className="inline-flex items-center gap-2 min-h-[42px] px-4 rounded-xl bg-mawarid-700 hover:bg-mawarid-800 text-on-accent text-xs font-bold transition shadow-md shadow-mawarid-900/15 cursor-pointer focus:outline-none focus:ring-2 focus:ring-mawarid-500 focus:ring-offset-2"
         >
           <Icons.Plus className="w-4 h-4" aria-hidden="true" />
           <span>إضافة مخزون جديد</span>
@@ -45,20 +46,20 @@ export default function ProviderStockCard({ go, refreshTrigger = 0 }) {
           const gazTypeLabel = formatGazStockType(stock?.stock_details?.gaz_stock_type)
 
           return (
-            <div key={stock.id} className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+            <div key={stock.id} data-resource={getResourceTheme(stock.type?.slug)} className="mw-service-card min-w-0 rounded-2xl border border-slate-200 bg-canvas p-5 sm:p-6 shadow-xs flex flex-col justify-between">
               <div>
-                <div className="flex items-start justify-between gap-3 pb-4 border-b border-slate-100">
+                <div className="flex flex-wrap items-start justify-between gap-3 pb-4 border-b border-slate-100">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="w-9 h-9 rounded-lg bg-mawarid-50 text-mawarid-700 flex items-center justify-center shrink-0">
                       <Icons.Box className="w-5 h-5" aria-hidden="true" />
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-sm font-black text-slate-900 truncate">
+                        <h3 className="mw-h3 text-slate-900">
                           {stock?.type?.name || 'مخزون مسجّل'}
                         </h3>
                         {gazTypeLabel && (
-                          <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold">
+                          <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold">
                             {gazTypeLabel}
                           </span>
                         )}
@@ -129,7 +130,7 @@ export default function ProviderStockCard({ go, refreshTrigger = 0 }) {
                 <button
                   type="button"
                   onClick={() => go(ROUTES.STOCK_DASHBOARD, { stockId: stock.id })}
-                  className="flex-1 min-h-[46px] rounded-xl bg-mawarid-700 hover:bg-mawarid-800 text-white text-sm font-bold transition shadow-md shadow-mawarid-900/15 cursor-pointer focus:outline-none focus:ring-2 focus:ring-mawarid-500 focus:ring-offset-2 flex items-center justify-center gap-2"
+                  className="flex-1 min-h-[46px] rounded-xl bg-mawarid-700 hover:bg-mawarid-800 text-on-accent text-sm font-bold transition shadow-md shadow-mawarid-900/15 cursor-pointer focus:outline-none focus:ring-2 focus:ring-mawarid-500 focus:ring-offset-2 flex items-center justify-center gap-2"
                 >
                   <Icons.Settings className="w-4 h-4" aria-hidden="true" />
                   <span>إدارة المخزون</span>

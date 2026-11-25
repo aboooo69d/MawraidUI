@@ -72,7 +72,7 @@ export default function StockHistoryPage({ go, stockId: propStockId }) {
   // ── حالات المخزون ──
   if (status === 'loading' || status === 'error' || status === 'empty') {
     return (
-      <StockPage title="سجل الحركات" subtitle="الوارد والمنصرف" go={go} backTo={ROUTES.STOCK_DASHBOARD} backParams={{ stockId: propStockId }} backLabel="لوحة المخزون">
+      <StockPage resourceSlug={stock?.type?.slug} title="سجل الحركات" subtitle="الوارد والمنصرف" go={go} backTo={ROUTES.STOCK_DASHBOARD} backParams={{ stockId: propStockId }} backLabel="لوحة المخزون">
         {status === 'loading' && <StockLoading label="جارٍ تحميل سجل الحركات…" />}
         {status === 'error' && (isSessionExpired(err) ? <SessionExpiredState go={go} /> : <StockErrorState err={err} onRetry={reload} />)}
         {status === 'empty' && <StockEmptyState go={go} />}
@@ -83,7 +83,7 @@ export default function StockHistoryPage({ go, stockId: propStockId }) {
   const sessionExpiredList = isSessionExpired(listErr)
 
   return (
-    <StockPage title="سجل الحركات" subtitle="الوارد والمنصرف" go={go} backTo={ROUTES.STOCK_DASHBOARD} backParams={{ stockId: propStockId }} backLabel="لوحة المخزون">
+    <StockPage resourceSlug={stock?.type?.slug} title="سجل الحركات" subtitle="الوارد والمنصرف" go={go} backTo={ROUTES.STOCK_DASHBOARD} backParams={{ stockId: propStockId }} backLabel="لوحة المخزون">
       {/* ── الفلاتر ── */}
       <div className="flex items-center gap-2 p-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-bold" aria-label="فلترة الحركات">
         {FILTERS.map((f) => (
@@ -93,7 +93,7 @@ export default function StockHistoryPage({ go, stockId: propStockId }) {
             aria-pressed={filter === f.key}
             onClick={() => changeFilter(f.key)}
             className={`flex-1 px-3 py-2.5 rounded-lg transition cursor-pointer ${
-              filter === f.key ? 'bg-white text-mawarid-900 shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'
+              filter === f.key ? 'bg-canvas text-mawarid-900 shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             {f.label}
@@ -109,7 +109,7 @@ export default function StockHistoryPage({ go, stockId: propStockId }) {
       ) : listErr ? (
         <StockErrorState err={listErr} onRetry={() => load(stockId, filter, page)} />
       ) : items.length === 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center fade-in">
+        <div className="rounded-2xl border border-slate-200 bg-canvas p-8 text-center fade-in">
           <div className="w-12 h-12 mx-auto rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center mb-3">
             <Icons.History className="w-6 h-6" aria-hidden="true" />
           </div>
@@ -121,7 +121,7 @@ export default function StockHistoryPage({ go, stockId: propStockId }) {
       ) : (
         <ul className="space-y-3">
           {items.map((t) => (
-            <li key={t.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+            <li key={t.id} className="rounded-2xl border border-slate-200 bg-canvas p-4 shadow-xs">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3 min-w-0">
                   <span

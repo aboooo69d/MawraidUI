@@ -1,4 +1,5 @@
 // ═══════════ لوحة البحث والفلاتر لاستكشاف المخزون ═══════════
+import { getResourceTheme } from '../../../shared/constants/resources'
 import { Icons } from '../../../shared/components/ui'
 
 const AVAILABILITY_OPTIONS = [
@@ -34,7 +35,7 @@ export default function StockFilters({
   return (
     <section
       aria-label="البحث وتصفية المخزون"
-      className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-xs space-y-4"
+      className="rounded-2xl border border-slate-200 bg-canvas p-4 sm:p-5 shadow-xs space-y-4"
     >
       {/* ── حقل البحث بالاسم أو العنوان ── */}
       <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2.5">
@@ -48,13 +49,13 @@ export default function StockFilters({
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="ابحث باسم المزود أو عنوان المخزون (مثال: المنصور، شارع جمال…)"
             aria-label="البحث باسم المزود أو عنوان المخزون"
-            className="w-full bg-slate-50 border border-slate-300 rounded-xl pr-10 pl-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-mawarid-600/20 focus:border-mawarid-600 focus:bg-white transition"
+            className="w-full bg-slate-50 border border-slate-300 rounded-xl pr-10 pl-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-mawarid-600/20 focus:border-mawarid-600 focus:bg-canvas transition"
           />
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <button
             type="submit"
-            className="px-4 py-2.5 rounded-xl bg-mawarid-700 hover:bg-mawarid-800 text-white text-xs font-bold transition cursor-pointer"
+            className="min-h-11 px-4 py-2.5 rounded-xl bg-mawarid-700 hover:bg-mawarid-800 text-on-accent text-xs font-bold transition cursor-pointer"
           >
             بحث
           </button>
@@ -62,7 +63,7 @@ export default function StockFilters({
             <button
               type="button"
               onClick={onReset}
-              className="px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold transition cursor-pointer"
+              className="min-h-11 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold transition cursor-pointer"
             >
               إعادة تعيين
             </button>
@@ -74,7 +75,7 @@ export default function StockFilters({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <div className="text-xs font-bold text-slate-700">حالة التوفر</div>
-          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 border border-slate-200 text-xs font-bold">
+          <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-slate-100 border border-slate-200 text-xs font-bold">
             {AVAILABILITY_OPTIONS.map((opt) => {
               const active = filters.inStock === opt.key
               return (
@@ -83,8 +84,8 @@ export default function StockFilters({
                   type="button"
                   aria-pressed={active}
                   onClick={() => onUpdateFilter({ inStock: opt.key })}
-                  className={`flex-1 px-3 py-2 rounded-lg transition cursor-pointer ${
-                    active ? 'bg-white text-mawarid-900 shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'
+                  className={`flex-1 min-h-11 px-3 py-2 rounded-lg transition cursor-pointer ${
+                    active ? 'bg-canvas text-mawarid-900 shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   {opt.label}
@@ -113,12 +114,12 @@ export default function StockFilters({
                   disabled={disabled}
                   aria-pressed={active}
                   onClick={() => onUpdateFilter({ maxDistanceKm: opt.km })}
-                  className={`px-3 py-2 rounded-xl border text-xs font-bold transition ${
+                  className={`min-h-11 px-3 py-2 rounded-xl border text-xs font-bold transition ${
                     disabled
                       ? 'border-slate-200 bg-slate-50 text-slate-300 cursor-not-allowed'
                       : active
-                        ? 'border-mawarid-600 bg-mawarid-700 text-white shadow-xs cursor-pointer'
-                        : 'border-slate-200 bg-white text-slate-700 hover:border-mawarid-300 hover:bg-mawarid-50/40 cursor-pointer'
+                        ? 'border-mawarid-600 bg-mawarid-700 text-on-accent cursor-pointer'
+                        : 'border-slate-200 bg-canvas text-slate-700 hover:border-mawarid-300 hover:bg-mawarid-50/40 cursor-pointer'
                   }`}
                 >
                   {opt.label}
@@ -138,9 +139,9 @@ export default function StockFilters({
               type="button"
               aria-pressed={filters.stockTypeId === null}
               onClick={() => onUpdateFilter({ stockTypeId: null })}
-              className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition cursor-pointer ${
+              className={`min-h-11 px-3 py-1.5 rounded-xl border text-sm font-bold transition cursor-pointer ${
                 filters.stockTypeId === null
-                  ? 'border-mawarid-600 bg-mawarid-700 text-white shadow-xs'
+                  ? 'border-mawarid-600 bg-mawarid-700 text-on-accent'
                   : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-mawarid-300'
               }`}
             >
@@ -151,13 +152,14 @@ export default function StockFilters({
               return (
                 <button
                   key={t.id}
+                  data-resource={getResourceTheme(t.slug) || 'default'}
                   type="button"
                   aria-pressed={active}
                   onClick={() => onUpdateFilter({ stockTypeId: t.id })}
-                  className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition cursor-pointer ${
+                  className={`min-h-11 px-3 py-1.5 rounded-xl border text-sm font-bold transition cursor-pointer ${
                     active
-                      ? 'border-mawarid-600 bg-mawarid-700 text-white shadow-xs'
-                      : 'border-slate-200 bg-white text-slate-700 hover:border-mawarid-300 hover:bg-mawarid-50/40'
+                      ? 'border-mawarid-600 bg-mawarid-700 text-on-accent'
+                      : 'border-slate-200 bg-canvas text-slate-700 hover:border-mawarid-300 hover:bg-mawarid-50/40'
                   }`}
                 >
                   {t.name}

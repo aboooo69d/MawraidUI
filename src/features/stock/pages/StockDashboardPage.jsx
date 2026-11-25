@@ -30,7 +30,7 @@ export default function StockDashboardPage({ go, stockId }) {
       type="button"
       onClick={reload}
       aria-label="تحديث بيانات المخزون"
-      className="w-10 h-10 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 flex items-center justify-center cursor-pointer transition"
+      className="w-11 h-11 rounded-xl border border-slate-200 bg-canvas text-slate-600 hover:bg-slate-100 flex items-center justify-center cursor-pointer transition"
     >
       <Icons.Refresh className="w-4 h-4" />
     </button>
@@ -56,31 +56,31 @@ export default function StockDashboardPage({ go, stockId }) {
     body = (
       <>
         {/* ── الرصيد المتاح بالوحدة الرئيسية ── */}
-        <div className="rounded-3xl bg-gradient-to-r from-mawarid-900 via-mawarid-800 to-mawarid-950 text-white p-6 shadow-xl relative overflow-hidden">
-          <div className="relative z-10">
-            <div className="flex items-center justify-between gap-3">
+        <div className="mw-service-summary rounded-2xl p-4 sm:p-6 text-slate-900">
+          <div>
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-canvas text-mawarid-700 flex items-center justify-center shrink-0">
                   <Icons.Box className="w-5 h-5" aria-hidden="true" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-sm font-black">{stock?.type?.name || 'المخزون الحالي'}</h2>
+                    <h2 className="mw-h3">{stock?.type?.name || 'المخزون الحالي'}</h2>
                     {gazTypeLabel && (
-                      <span className="px-2 py-0.5 rounded-full bg-white/15 border border-white/25 text-white text-[10px] font-bold">
+                      <span className="px-2 py-0.5 rounded-full bg-canvas border border-slate-200 text-mawarid-700 text-[10px] font-bold">
                         {gazTypeLabel}
                       </span>
                     )}
                   </div>
-                  <p className="text-[11px] text-mawarid-200">الرصيد المتاح{mainUnit?.name ? ` (${mainUnit.name})` : ''}</p>
+                  <p className="text-[11px] text-slate-600">الرصيد المتاح{mainUnit?.name ? ` (${mainUnit.name})` : ''}</p>
                 </div>
               </div>
-              <span className="text-[11px] font-bold text-mawarid-200">محدّث {formatDateTime(stock?.updated_at)}</span>
+              <span className="text-[11px] font-bold text-slate-600">محدّث {formatDateTime(stock?.updated_at)}</span>
             </div>
 
             <div className="mt-5 flex items-end gap-2">
               <span className="text-4xl font-black font-mono" dir="ltr">{formatAmount(stock?.available)}</span>
-              <span className="text-sm font-bold text-mawarid-200 pb-1.5">{mainUnit?.name || ''}</span>
+              <span className="text-sm font-bold text-slate-600 pb-1.5">{mainUnit?.name || ''}</span>
             </div>
           </div>
         </div>
@@ -91,7 +91,7 @@ export default function StockDashboardPage({ go, stockId }) {
             <button
               type="button"
               onClick={() => go(ROUTES.PROVIDER_ORDERS, { stockId: stock.id })}
-              className="rounded-2xl border border-amber-200 bg-white p-4 shadow-xs flex items-center justify-between text-right hover:border-amber-400 transition cursor-pointer"
+              className="rounded-2xl border border-amber-200 bg-canvas p-3 sm:p-4 flex flex-wrap gap-2 items-center justify-between text-right hover:border-amber-400 transition cursor-pointer"
             >
               <div>
                 <p className="text-xs font-bold text-slate-500">طلبات قيد الانتظار</p>
@@ -107,7 +107,7 @@ export default function StockDashboardPage({ go, stockId }) {
             <button
               type="button"
               onClick={() => go(ROUTES.PROVIDER_ORDERS, { stockId: stock.id })}
-              className="rounded-2xl border border-emerald-200 bg-white p-4 shadow-xs flex items-center justify-between text-right hover:border-emerald-400 transition cursor-pointer"
+              className="rounded-2xl border border-emerald-200 bg-canvas p-3 sm:p-4 flex flex-wrap gap-2 items-center justify-between text-right hover:border-emerald-400 transition cursor-pointer"
             >
               <div>
                 <p className="text-xs font-bold text-slate-500">طلبات مكتملة</p>
@@ -123,7 +123,7 @@ export default function StockDashboardPage({ go, stockId }) {
         )}
 
         {/* ── أرصدة جميع الوحدات (من الخادم دون حسابات محلية) ── */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+        <div className="rounded-2xl border border-slate-200 bg-canvas p-5 shadow-xs">
           <h3 className="text-sm font-black text-slate-900 mb-3">الأرصدة بكل الوحدات</h3>
           {balances.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -148,7 +148,7 @@ export default function StockDashboardPage({ go, stockId }) {
         </div>
 
         {/* ── الإجراءات السريعة ── */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+        <div className="rounded-2xl border border-slate-200 bg-canvas p-5 shadow-xs">
           <h3 className="text-sm font-black text-slate-900 mb-3">الإجراءات السريعة</h3>
           <div className="grid grid-cols-2 gap-3">
             {QUICK_ACTIONS.map((a) => {
@@ -170,7 +170,7 @@ export default function StockDashboardPage({ go, stockId }) {
         </div>
 
         {/* ── بيانات المخزون ── */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 text-xs shadow-xs">
+        <div className="rounded-2xl border border-slate-200 bg-canvas p-5 text-xs shadow-xs">
           <h3 className="text-sm font-black text-slate-900 mb-3">بيانات المخزون</h3>
           <div className="space-y-2">
             <div className="flex justify-between gap-4 text-slate-600">
@@ -231,6 +231,7 @@ export default function StockDashboardPage({ go, stockId }) {
 
   return (
     <StockPage
+      resourceSlug={stock?.type?.slug}
       title="لوحة إدارة المخزون"
       subtitle="الأرصدة والحركات"
       go={go}

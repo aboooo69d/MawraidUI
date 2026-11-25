@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { PHONE_RE } from '../../../shared/constants/regex'
-import { Icons, BrandLogo, ErrorBanner, Label, PhoneInput, TextInput, PrimaryBtn, BackBtn } from '../../../shared/components/ui'
+import { Icons, BrandLogo, ErrorBanner, Label, PhoneInput, TextInput, PrimaryBtn, BackBtn, ThemeToggle } from '../../../shared/components/ui'
 import TurnstileWidget from '../components/TurnstileWidget'
 
 export default function Login({ go }) {
@@ -35,24 +35,27 @@ export default function Login({ go }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-mawarid-50/30 to-slate-100 flex flex-col justify-between p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-slate-50 flex flex-col justify-between p-4 sm:p-6 lg:p-8">
       {/* شريط علوي مع زر العودة للرئيسية */}
-      <div className="max-w-5xl w-full mx-auto flex items-center justify-between pb-6">
-        <div className="cursor-pointer" onClick={() => go('home')}>
+      <div className="max-w-5xl w-full mx-auto flex items-center justify-between gap-2 pb-6">
+        <button type="button" className="min-h-11 rounded-lg" aria-label="موارد — الرئيسية" onClick={() => go('home')}>
           <BrandLogo size="sm" />
+        </button>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <ThemeToggle />
+          <BackBtn onClick={() => go('home')} label="العودة للرئيسية" />
         </div>
-        <BackBtn onClick={() => go('home')} label="العودة للرئيسية" />
       </div>
 
       {/* بطاقة تسجيل الدخول الرئيسية */}
-      <div className="max-w-md w-full mx-auto bg-white rounded-3xl border border-slate-200/80 shadow-xl shadow-slate-200/50 p-6 sm:p-8 fade-in">
+      <div className="max-w-md w-full mx-auto bg-canvas rounded-3xl border border-slate-200/80 mw-auth-card shadow-card fade-in">
         <div className="text-center mb-6">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-mawarid-700 to-mawarid-900 flex items-center justify-center shadow-md shadow-mawarid-800/20 mb-3">
+          <div className="w-14 h-14 mx-auto rounded-2xl mw-logo flex items-center justify-center mb-3">
             <Icons.LogoMark className="w-9 h-9" />
           </div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">تسجيل الدخول إلى موارد</h1>
+          <h1 className="mw-h1 text-slate-900">تسجيل الدخول إلى موارد</h1>
           <p className="text-xs sm:text-sm font-medium text-slate-500 mt-1">
-            أدخل بيانات حسابك المعتمد لمتابعة الحصص وإجراءات التوزيع
+            أدخل رقم هاتفك وكلمة المرور للوصول إلى حسابك.
           </p>
         </div>
 
@@ -62,7 +65,7 @@ export default function Login({ go }) {
           <div>
             <Label req htmlFor="phone">رقم الجوال المسجل</Label>
             <PhoneInput value={phone} onChange={setPhone} error={!!err} id="phone" />
-            <p className="text-[11.5px] text-slate-400 mt-1.5">أدخل 9 أرقام (مثل 77XXXXXXX) بدون رمز الدولة</p>
+            <p className="text-xs text-slate-400 mt-1.5">أدخل 9 أرقام (مثل 77XXXXXXX) بدون رمز الدولة</p>
           </div>
 
           <div>
@@ -71,7 +74,7 @@ export default function Login({ go }) {
               <button
                 type="button"
                 onClick={() => go('forgot')}
-                className="text-[12px] font-bold text-mawarid-700 hover:text-mawarid-900 cursor-pointer"
+                className="min-h-11 text-xs font-bold text-mawarid-700 hover:text-mawarid-900 cursor-pointer"
               >
                 نسيت كلمة المرور؟
               </button>
@@ -88,7 +91,7 @@ export default function Login({ go }) {
               <button
                 type="button"
                 onClick={() => setShowPass(!showPass)}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer p-1"
+                className="absolute left-0 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer min-h-11 min-w-11 grid place-items-center"
                 aria-label={showPass ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
               >
                 {showPass ? <Icons.EyeOff className="w-4 h-4" /> : <Icons.Eye className="w-4 h-4" />}
@@ -114,14 +117,14 @@ export default function Login({ go }) {
           <div className="grid grid-cols-2 gap-2 text-xs font-bold">
             <button
               onClick={() => go('register-consumer')}
-              className="py-2.5 px-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-white hover:border-mawarid-500 text-slate-700 hover:text-mawarid-700 transition flex items-center justify-center gap-1.5 cursor-pointer"
+              className="py-2.5 px-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-canvas hover:border-mawarid-500 text-slate-700 hover:text-mawarid-700 transition flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <Icons.User className="w-3.5 h-3.5" />
               <span>تسجيل مواطن / أسرة</span>
             </button>
             <button
               onClick={() => go('register-provider')}
-              className="py-2.5 px-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-white hover:border-mawarid-500 text-slate-700 hover:text-mawarid-700 transition flex items-center justify-center gap-1.5 cursor-pointer"
+              className="py-2.5 px-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-canvas hover:border-mawarid-500 text-slate-700 hover:text-mawarid-700 transition flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <Icons.Business className="w-3.5 h-3.5" />
               <span>تسجيل وكيل خدمة</span>

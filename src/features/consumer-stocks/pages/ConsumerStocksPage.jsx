@@ -1,6 +1,7 @@
 // ═══════════ شاشة استكشاف المخزون المتاح للمستفيدين ═══════════
 import { useAuth } from '../../auth/hooks/useAuth'
-import { BackBtn, ErrorBanner, Icons, SecondaryBtn } from '../../../shared/components/ui'
+import { BackBtn, ErrorBanner, Icons, SecondaryBtn, ThemeToggle } from '../../../shared/components/ui'
+import { getResourceTheme } from '../../../shared/constants/resources'
 import { ROUTES } from '../../../shared/constants/routes'
 import { formatAmount } from '../utils/format'
 import { useConsumerStocks } from '../hooks/useConsumerStocks'
@@ -43,21 +44,22 @@ export default function ConsumerStocksPage({ go, onSessionExpired }) {
     reload,
   } = useConsumerStocks({ isConsumer, onSessionExpired })
 
+  const resource = getResourceTheme(stockTypes.find(({ id }) => id === filters.stockTypeId)?.slug)
   const totalPages = Math.max(1, Number(meta?.total_pages) || 1)
   const total = meta?.total
 
   return (
-    <div dir="rtl" className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans">
+    <div dir="rtl" data-resource={resource} className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans">
       {/* ── الترويسة ── */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 min-w-0">
+      <header className="bg-canvas border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:justify-between">
+          <div className="contents sm:flex sm:items-center sm:gap-2 sm:min-w-0">
             <BackBtn onClick={() => go(ROUTES.DASHBOARD)} label="لوحة التحكم" />
-            <div className="min-w-0">
-              <h1 className="text-lg sm:text-xl font-black text-slate-900 truncate">
+            <div className="col-span-2 row-start-2 min-w-0">
+              <h1 className="text-base sm:text-xl font-extrabold text-slate-900 leading-tight">
                 استكشاف المخزون المتاح
               </h1>
-              <p className="text-xs text-slate-500 truncate">
+              <p className="text-xs text-slate-500">
                 {activeCoords
                   ? 'مرتّب حسب الأقرب إلى موقعك مع حساب المسافة بالكيلومتر'
                   : 'مرتّب حسب الأحدث — حدد عنواناً افتراضياً للترتيب حسب الأقرب'}
@@ -65,16 +67,19 @@ export default function ConsumerStocksPage({ go, onSessionExpired }) {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={reload}
-            disabled={loading}
-            aria-label="تحديث القائمة"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition cursor-pointer disabled:opacity-50"
-          >
-            <Icons.Refresh className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">تحديث</span>
-          </button>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <ThemeToggle />
+            <button
+              type="button"
+              onClick={reload}
+              disabled={loading}
+              aria-label="تحديث القائمة"
+              className="inline-flex min-h-11 min-w-11 justify-center items-center gap-1.5 px-2 sm:px-3 py-2 rounded-xl border border-slate-200 bg-canvas hover:bg-slate-50 text-slate-700 text-xs font-bold transition cursor-pointer disabled:opacity-50"
+            >
+              <Icons.Refresh className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">تحديث</span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -129,17 +134,17 @@ export default function ConsumerStocksPage({ go, onSessionExpired }) {
 
         {/* 4) حالات التحميل / الخطأ / فارغ / النتائج */}
         {loading ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center space-y-3">
+          <div className="rounded-2xl border border-slate-200 bg-canvas p-10 text-center space-y-3">
             <div className="w-8 h-8 mx-auto border-3 border-mawarid-200 border-t-mawarid-700 rounded-full animate-spin" />
             <p className="text-sm font-bold text-slate-600">جارٍ البحث عن المخزون المتاح…</p>
           </div>
         ) : err ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4">
+          <div className="rounded-2xl border border-slate-200 bg-canvas p-6 space-y-4">
             <ErrorBanner err={err} />
             <SecondaryBtn onClick={reload}>إعادة المحاولة</SecondaryBtn>
           </div>
         ) : stocks.length === 0 ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center space-y-3">
+          <div className="rounded-2xl border border-slate-200 bg-canvas p-10 text-center space-y-3">
             <div className="w-12 h-12 mx-auto rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center">
               <Icons.Box className="w-6 h-6" />
             </div>

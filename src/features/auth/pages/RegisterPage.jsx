@@ -2,26 +2,26 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { authApi } from '../../../services/api'
 import { PHONE_RE } from '../../../shared/constants/regex'
-import { Icons, BrandLogo, BackBtn, ErrorBanner, InfoBanner, Label, PhoneInput, TextInput, PrimaryBtn, SecondaryBtn } from '../../../shared/components/ui'
+import { Icons, BrandLogo, BackBtn, ErrorBanner, InfoBanner, Label, PhoneInput, TextInput, PrimaryBtn, SecondaryBtn, ThemeToggle } from '../../../shared/components/ui'
 import TurnstileWidget from '../components/TurnstileWidget'
 
 function CategoryCard({ selected, onToggle, icon: Icon, title, description, children }) {
   return (
     <div className={`rounded-2xl border transition p-4 ${selected ? 'border-mawarid-600 bg-mawarid-50/40 shadow-xs' : 'border-slate-200 bg-slate-50/60 hover:bg-slate-50'}`}>
-      <div className="flex items-center justify-between gap-3 cursor-pointer select-none" onClick={onToggle}>
-        <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${selected ? 'bg-mawarid-700 text-white' : 'bg-slate-200 text-slate-600'}`}>
+      <button type="button" aria-expanded={selected} className="flex min-h-11 w-full items-center justify-between gap-3 rounded-lg text-start cursor-pointer" onClick={onToggle}>
+        <span className="flex items-center gap-3">
+          <span className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${selected ? 'bg-mawarid-700 text-on-accent' : 'bg-slate-200 text-slate-600'}`}>
             <Icon className="w-5 h-5" />
-          </div>
-          <div className="text-right">
-            <h4 className="text-sm font-bold text-slate-900">{title}</h4>
-            <p className="text-[11px] text-slate-500">{description}</p>
-          </div>
-        </div>
-        <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition ${selected ? 'bg-mawarid-700 border-mawarid-700 text-white' : 'border-slate-300 bg-white'}`}>
+          </span>
+          <span className="text-right">
+            <span className="block text-sm font-bold text-slate-900">{title}</span>
+            <span className="block text-xs text-slate-500">{description}</span>
+          </span>
+        </span>
+        <span className={`w-5 h-5 rounded-md border flex items-center justify-center transition ${selected ? 'bg-mawarid-700 border-mawarid-700 text-on-accent' : 'border-slate-300 bg-canvas'}`}>
           {selected && <Icons.Check className="w-3.5 h-3.5" />}
-        </div>
-      </div>
+        </span>
+      </button>
       {selected && children && (
         <div className="mt-3 pt-3 border-t border-mawarid-200/60 space-y-2.5 fade-in text-right">
           {children}
@@ -105,29 +105,30 @@ export function RegisterConsumer({ go }) {
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 flex flex-col justify-between">
       <div className="max-w-2xl w-full mx-auto">
-        <div className="flex items-center justify-between pb-6 mb-2">
-          <div className="cursor-pointer" onClick={() => go('home')}>
+        <div className="flex items-center justify-between gap-2 pb-6 mb-2">
+          <button type="button" className="min-h-11 rounded-lg" aria-label="موارد — الرئيسية" onClick={() => go('home')}>
             <BrandLogo size="sm" />
-          </div>
-          <div className="flex items-center gap-2">
+          </button>
+          <div className="flex flex-wrap items-center justify-end gap-1.5">
+            <ThemeToggle />
             <BackBtn onClick={() => go('home')} label="الرئيسية" />
             <button
               onClick={() => go('login')}
-              className="text-xs font-bold text-mawarid-700 hover:underline px-2"
+              className="min-h-11 text-xs font-bold text-mawarid-700 hover:underline px-2"
             >
               تسجيل الدخول
             </button>
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xl p-6 sm:p-8 fade-in">
+        <div className="bg-canvas rounded-3xl border border-slate-200/90 mw-auth-card shadow-card fade-in">
           <div className="text-right mb-6 pb-4 border-b border-slate-100">
             <span className="inline-block px-3 py-1 rounded-full bg-mawarid-50 text-mawarid-700 text-xs font-bold mb-2">
               حساب مستفيد جديد
             </span>
-            <h1 className="text-2xl font-black text-slate-900">إنشاء حساب مواطن / مستفيد</h1>
+            <h1 className="mw-h1 text-slate-900">إنشاء حساب مواطن / مستفيد</h1>
             <p className="text-xs text-slate-500 mt-1">
-              أدخل بيانات الهوية لتسجيل حصتك في توزيع الغاز المنزلي، صهاريج المياه، أو مخصصات الوقود بمدينة تعز
+              أدخل بياناتك لإنشاء حساب مستفيد في منصة موارد بمدينة تعز.
             </p>
           </div>
 
@@ -339,21 +340,24 @@ export function RegisterProvider({ go }) {
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 flex flex-col justify-between">
       <div className="max-w-xl w-full mx-auto">
-        <div className="flex items-center justify-between pb-6 mb-2">
-          <div className="cursor-pointer" onClick={() => go('home')}>
+        <div className="flex items-center justify-between gap-2 pb-6 mb-2">
+          <button type="button" className="min-h-11 rounded-lg" aria-label="موارد — الرئيسية" onClick={() => go('home')}>
             <BrandLogo size="sm" />
+          </button>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <ThemeToggle />
+            <BackBtn onClick={() => go('home')} label="الرئيسية" />
           </div>
-          <BackBtn onClick={() => go('home')} label="الرئيسية" />
         </div>
 
-        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xl p-6 sm:p-8 fade-in">
+        <div className="bg-canvas rounded-3xl border border-slate-200/90 mw-auth-card shadow-card fade-in">
           <div className="text-right mb-6 pb-4 border-b border-slate-100">
-            <span className="inline-block px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-bold mb-2">
+            <span className="inline-block px-3 py-1 rounded-full bg-mawarid-50 text-mawarid-700 text-xs font-bold mb-2">
               بوابة الشركاء ومقدمي الخدمة
             </span>
-            <h1 className="text-2xl font-black text-slate-900">تسجيل وكيل أو محطة توزيع معتمدة</h1>
+            <h1 className="mw-h1 text-slate-900">تسجيل وكيل أو محطة توزيع معتمدة</h1>
             <p className="text-xs text-slate-500 mt-1">
-              لوكيل غاز، مورد مياه، أو محطة محروقات في مدينة تعز لإدارة الحصص والتسليم الموثق
+              أنشئ حساباً لإدارة المخزون والطلبات الواردة لمركز خدمتك في مدينة تعز.
             </p>
           </div>
 
@@ -377,7 +381,7 @@ export function RegisterProvider({ go }) {
                 value={providerTypeId}
                 onChange={(e) => setProviderTypeId(e.target.value)}
                 disabled={providerTypes.status !== 'ready'}
-                className="w-full min-h-[48px] rounded-xl border border-slate-200 bg-white px-3.5 text-slate-800 text-sm font-semibold outline-none transition shadow-sm hover:border-slate-300 focus:border-mawarid-600 focus:ring-2 focus:ring-mawarid-600/20 disabled:opacity-60 disabled:cursor-wait"
+                className="w-full min-h-[48px] rounded-xl border border-slate-200 bg-canvas px-3.5 text-slate-800 text-sm font-semibold outline-none transition shadow-sm hover:border-slate-300 focus:border-mawarid-600 focus:ring-2 focus:ring-mawarid-600/20 disabled:opacity-60 disabled:cursor-wait"
               >
                 <option value="">
                   {providerTypes.status === 'loading' ? 'جارٍ تحميل أنواع مزودي الخدمة…' : 'اختر نوع مزود الخدمة'}
@@ -421,7 +425,7 @@ export function RegisterProvider({ go }) {
                 value={desc}
                 onChange={(e) => setDesc(e.target.value)}
                 rows={3}
-                className="w-full rounded-xl border border-slate-200 bg-white p-3.5 text-xs text-slate-800 outline-none focus:border-mawarid-600 focus:ring-2 focus:ring-mawarid-600/20"
+                className="w-full rounded-xl border border-slate-200 bg-canvas p-3.5 text-xs text-slate-800 outline-none focus:border-mawarid-600 focus:ring-2 focus:ring-mawarid-600/20"
               />
             </div>
 

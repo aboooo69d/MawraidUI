@@ -20,7 +20,7 @@ export default function OrderCard({ order, onSelect, onCancelClick }) {
   const isPending = order.status === 'pending'
 
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-xs hover:border-mawarid-300 transition space-y-3.5 text-right">
+    <article className="rounded-2xl border border-slate-200 bg-canvas p-4 sm:p-5 shadow-xs hover:border-mawarid-300 transition space-y-3.5 text-right">
       {/* السطر العلوي: رقم الطلب + الحالة + التاريخ */}
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="space-y-1 min-w-0">

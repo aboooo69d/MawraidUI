@@ -196,6 +196,7 @@ export default function StockCreatePage({ go, showToast }) {
   const needsLogin = sessionExpired || isSessionExpired(types.err)
   return (
     <StockPage
+      resourceSlug={selectedType?.slug}
       title="إضافة مخزون جديد"
       subtitle="التصنيف، الموقع، والوحدات"
       go={go}
@@ -212,7 +213,7 @@ export default function StockCreatePage({ go, showToast }) {
 
           <form onSubmit={submit} className="space-y-4" noValidate>
             {/* ── نوع المخزون ── */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+            <div className="rounded-2xl border border-slate-200 bg-canvas p-4 sm:p-5">
               <Label req htmlFor="stock-type">نوع المخزون</Label>
               <select
                 id="stock-type"
@@ -220,7 +221,7 @@ export default function StockCreatePage({ go, showToast }) {
                 onChange={(e) => handleTypeChange(e.target.value)}
                 disabled={types.status !== 'ready'}
                 aria-invalid={submitted && !!check.typeError}
-                className={`w-full min-h-[48px] rounded-xl border bg-white px-3.5 text-slate-800 text-sm font-semibold outline-none transition shadow-sm disabled:opacity-60 disabled:cursor-wait focus:ring-2 focus:ring-mawarid-600/20 ${
+                className={`w-full min-h-[48px] rounded-xl border bg-canvas px-3.5 text-slate-800 text-sm font-semibold outline-none transition shadow-sm disabled:opacity-60 disabled:cursor-wait focus:ring-2 focus:ring-mawarid-600/20 ${
                   submitted && check.typeError ? 'border-rose-300 bg-rose-50/50' : 'border-slate-200 hover:border-slate-300 focus:border-mawarid-600'
                 }`}
               >
@@ -261,7 +262,7 @@ export default function StockCreatePage({ go, showToast }) {
                     value={gazStockType}
                     onChange={(e) => setGazStockType(e.target.value)}
                     aria-invalid={submitted && !!check.gazTypeError}
-                    className={`w-full min-h-[48px] rounded-xl border bg-white px-3.5 text-slate-800 text-sm font-semibold outline-none transition shadow-sm focus:ring-2 focus:ring-mawarid-600/20 ${
+                    className={`w-full min-h-[48px] rounded-xl border bg-canvas px-3.5 text-slate-800 text-sm font-semibold outline-none transition shadow-sm focus:ring-2 focus:ring-mawarid-600/20 ${
                       submitted && check.gazTypeError ? 'border-rose-300 bg-rose-50/50' : 'border-slate-200 hover:border-slate-300 focus:border-mawarid-600'
                     }`}
                   >
@@ -275,7 +276,7 @@ export default function StockCreatePage({ go, showToast }) {
             </div>
 
             {/* ── عنوان المخزون ── */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+            <div className="rounded-2xl border border-slate-200 bg-canvas p-4 sm:p-5">
               <div className="flex items-center justify-between">
                 <Label req htmlFor="stock-address">عنوان المخزون (10–200 حرف)</Label>
                 <span
@@ -295,7 +296,7 @@ export default function StockCreatePage({ go, showToast }) {
                 maxLength={ADDRESS_MAX + 20}
                 placeholder="مثال: تعز - شارع جمال بجانب جولة المسبح"
                 aria-invalid={submitted && !!check.addressError}
-                className={`w-full rounded-xl border bg-white px-3.5 py-3 text-slate-800 text-sm font-medium outline-none transition shadow-sm placeholder:text-slate-400 focus:ring-2 focus:ring-mawarid-600/20 resize-y ${
+                className={`w-full rounded-xl border bg-canvas px-3.5 py-3 text-slate-800 text-sm font-medium outline-none transition shadow-sm placeholder:text-slate-400 focus:ring-2 focus:ring-mawarid-600/20 resize-y ${
                   submitted && check.addressError ? 'border-rose-300 bg-rose-50/50' : 'border-slate-200 hover:border-slate-300 focus:border-mawarid-600'
                 }`}
               />
@@ -303,7 +304,7 @@ export default function StockCreatePage({ go, showToast }) {
             </div>
 
             {/* ── الموقع الجغرافي (lat / lng) ── */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 space-y-3">
+            <div className="rounded-2xl border border-slate-200 bg-canvas p-4 sm:p-5 space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <h2 className="text-sm font-black text-slate-900">الموقع الجغرافي</h2>
@@ -376,7 +377,7 @@ export default function StockCreatePage({ go, showToast }) {
             </div>
 
             {/* ── الوحدة الرئيسية (معاملها ثابت 1) ── */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+            <div className="rounded-2xl border border-slate-200 bg-canvas p-4 sm:p-5">
               <div className="flex items-center justify-between gap-2 mb-3">
                 <h2 className="text-sm font-black text-slate-900">الوحدة الرئيسية</h2>
                 <span className="px-2 py-0.5 rounded-full bg-mawarid-50 text-mawarid-700 text-[11px] font-bold border border-mawarid-200">
@@ -433,7 +434,7 @@ export default function StockCreatePage({ go, showToast }) {
               {units.slice(1).map((u, idx) => {
                 const i = idx + 1
                 return (
-                  <div key={u._key} className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <div key={u._key} className="rounded-2xl border border-slate-200 bg-canvas p-4">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="text-xs font-black text-slate-600">وحدة فرعية {idx + 1}</h3>
                       <button

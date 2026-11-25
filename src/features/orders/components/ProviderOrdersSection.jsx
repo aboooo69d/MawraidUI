@@ -134,7 +134,7 @@ export default function ProviderOrdersSection({
             onClick={loadOrders}
             disabled={loading}
             aria-label="تحديث الطلبات الواردة"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-canvas hover:bg-slate-50 text-slate-700 text-xs font-bold transition cursor-pointer disabled:opacity-50"
           >
             <Icons.Refresh className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">تحديث</span>
@@ -143,7 +143,7 @@ export default function ProviderOrdersSection({
           <button
             type="button"
             onClick={() => go(ROUTES.PROVIDER_ORDERS)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-mawarid-700 hover:bg-mawarid-800 text-white text-xs font-bold transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-mawarid-700 hover:bg-mawarid-800 text-on-accent text-xs font-bold transition cursor-pointer"
           >
             <span>إدارة كل الطلبات</span>
             <Icons.ArrowLeft className="w-3.5 h-3.5" />
@@ -162,8 +162,8 @@ export default function ProviderOrdersSection({
               onClick={() => setStatusFilter(tab.value)}
               className={`px-3.5 py-1.5 rounded-xl border text-xs font-bold transition cursor-pointer ${
                 active
-                  ? 'border-mawarid-700 bg-mawarid-700 text-white shadow-xs'
-                  : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                  ? 'border-mawarid-700 bg-mawarid-700 text-on-accent shadow-xs'
+                  : 'border-slate-200 bg-canvas hover:bg-slate-50 text-slate-700'
               }`}
             >
               {tab.label}
@@ -175,19 +175,19 @@ export default function ProviderOrdersSection({
       <ErrorBanner err={actionErr} />
 
       {loading ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center space-y-2.5">
+        <div className="rounded-2xl border border-slate-200 bg-canvas p-8 text-center space-y-2.5">
           <div className="w-7 h-7 mx-auto border-3 border-mawarid-200 border-t-mawarid-700 rounded-full animate-spin" />
           <p className="text-xs font-bold text-slate-500">جارٍ تحميل الطلبات الواردة…</p>
         </div>
       ) : err ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3">
+        <div className="rounded-2xl border border-slate-200 bg-canvas p-5 space-y-3">
           <ErrorBanner err={err} />
           <SecondaryBtn onClick={loadOrders} className="text-xs">
             إعادة المحاولة
           </SecondaryBtn>
         </div>
       ) : orders.length === 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center space-y-2.5 shadow-xs">
+        <div className="rounded-2xl border border-slate-200 bg-canvas p-8 text-center space-y-2.5 shadow-xs">
           <div className="w-12 h-12 mx-auto rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center">
             <Icons.ShoppingBag className="w-6 h-6" />
           </div>

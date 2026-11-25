@@ -1,7 +1,7 @@
 // ═══════════ شاشة إدارة الطلبات الواردة لمزود الخدمة مع ملخص المخزون والفلاتر ═══════════
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ordersApi, stockApi } from '../../../services/api'
-import { BackBtn, ErrorBanner, Icons, SecondaryBtn } from '../../../shared/components/ui'
+import { BackBtn, ErrorBanner, Icons, SecondaryBtn, ThemeToggle } from '../../../shared/components/ui'
 import { ROUTES } from '../../../shared/constants/routes'
 import {
   CONSUMER_TYPE_OPTIONS,
@@ -186,9 +186,9 @@ export default function ProviderOrdersPage({
   return (
     <div dir="rtl" className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans">
       {/* ── الترويسة ── */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 min-w-0">
+      <header className="bg-canvas border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:justify-between">
+          <div className="contents sm:flex sm:items-center sm:gap-2 sm:min-w-0">
             <BackBtn
               onClick={() =>
                 initialStockId
@@ -197,26 +197,29 @@ export default function ProviderOrdersPage({
               }
               label={initialStockId ? 'إدارة المخزون' : 'لوحة التحكم'}
             />
-            <div className="min-w-0">
-              <h1 className="text-lg sm:text-xl font-black text-slate-900 truncate">
+            <div className="col-span-2 row-start-2 min-w-0">
+              <h1 className="text-base sm:text-xl font-extrabold text-slate-900 leading-tight">
                 الطلبات الواردة للمزود
               </h1>
-              <p className="text-xs text-slate-500 truncate">
+              <p className="text-xs text-slate-500">
                 قبول، رفض، وإتمام تسليم طلبات المستفيدين
               </p>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={refreshAll}
-            disabled={loading}
-            aria-label="تحديث البيانات"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition cursor-pointer disabled:opacity-50"
-          >
-            <Icons.Refresh className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">تحديث</span>
-          </button>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <ThemeToggle />
+            <button
+              type="button"
+              onClick={refreshAll}
+              disabled={loading}
+              aria-label="تحديث البيانات"
+              className="inline-flex min-h-11 min-w-11 justify-center items-center gap-1.5 px-2 sm:px-3 py-2 rounded-xl border border-slate-200 bg-canvas hover:bg-slate-50 text-slate-700 text-xs font-bold transition cursor-pointer disabled:opacity-50"
+            >
+              <Icons.Refresh className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">تحديث</span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -225,7 +228,7 @@ export default function ProviderOrdersPage({
         {/* 1) بطاقات الملخص الحية من /stocks/me */}
         {summaryCounters && (
           <section className="grid grid-cols-1 sm:grid-cols-3 gap-4" aria-label="ملخص حالة المخزون والطلبات">
-            <div className="rounded-2xl border border-mawarid-200 bg-white p-4 shadow-xs flex items-center justify-between">
+            <div className="rounded-2xl border border-mawarid-200 bg-canvas p-4 shadow-xs flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold text-slate-500">
                   {summaryCounters.singleStock ? 'الرصيد المتاح حالياً' : 'إجمالي الأرصدة المتاحة'}
@@ -239,7 +242,7 @@ export default function ProviderOrdersPage({
               </div>
             </div>
 
-            <div className="rounded-2xl border border-amber-200 bg-white p-4 shadow-xs flex items-center justify-between">
+            <div className="rounded-2xl border border-amber-200 bg-canvas p-4 shadow-xs flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold text-slate-500">طلبات قيد الانتظار</p>
                 <p className="mt-1 text-2xl font-black text-amber-700 font-mono" dir="ltr">
@@ -251,7 +254,7 @@ export default function ProviderOrdersPage({
               </div>
             </div>
 
-            <div className="rounded-2xl border border-emerald-200 bg-white p-4 shadow-xs flex items-center justify-between">
+            <div className="rounded-2xl border border-emerald-200 bg-canvas p-4 shadow-xs flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold text-slate-500">طلبات مكتملة</p>
                 <p className="mt-1 text-2xl font-black text-emerald-700 font-mono" dir="ltr">
@@ -266,7 +269,7 @@ export default function ProviderOrdersPage({
         )}
 
         {/* 2) لوحة الفلاتر */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-xs space-y-4">
+        <section className="rounded-2xl border border-slate-200 bg-canvas p-4 sm:p-5 shadow-xs space-y-4">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-black text-slate-700 flex items-center gap-1.5">
@@ -297,7 +300,7 @@ export default function ProviderOrdersPage({
                     }}
                     className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition cursor-pointer ${
                       active
-                        ? 'border-mawarid-700 bg-mawarid-700 text-white shadow-xs'
+                        ? 'border-mawarid-700 bg-mawarid-700 text-on-accent shadow-xs'
                         : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700'
                     }`}
                   >
@@ -321,7 +324,7 @@ export default function ProviderOrdersPage({
                 className={`px-2.5 py-1 rounded-lg border text-xs font-bold transition cursor-pointer ${
                   consumerTypeFilter === ''
                     ? 'border-mawarid-600 bg-mawarid-50 text-mawarid-800'
-                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                    : 'border-slate-200 bg-canvas text-slate-600 hover:bg-slate-50'
                 }`}
               >
                 الكل
@@ -337,7 +340,7 @@ export default function ProviderOrdersPage({
                   className={`px-2.5 py-1 rounded-lg border text-xs font-bold transition cursor-pointer ${
                     consumerTypeFilter === opt.value
                       ? 'border-mawarid-600 bg-mawarid-50 text-mawarid-800'
-                      : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                      : 'border-slate-200 bg-canvas text-slate-600 hover:bg-slate-50'
                   }`}
                 >
                   {opt.shortLabel}
@@ -358,7 +361,7 @@ export default function ProviderOrdersPage({
                     setStockIdFilter(e.target.value)
                     setPage(1)
                   }}
-                  className="flex-1 min-h-[38px] rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-800 outline-none focus:border-mawarid-600"
+                  className="flex-1 min-h-[38px] rounded-xl border border-slate-200 bg-canvas px-3 text-xs font-bold text-slate-800 outline-none focus:border-mawarid-600"
                 >
                   <option value="">جميع المخازن ({stocks.length})</option>
                   {stocks.map((s) => (
@@ -388,17 +391,17 @@ export default function ProviderOrdersPage({
 
         {/* 4) قائمة البطاقات */}
         {loading ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center space-y-3">
+          <div className="rounded-2xl border border-slate-200 bg-canvas p-10 text-center space-y-3">
             <div className="w-8 h-8 mx-auto border-3 border-mawarid-200 border-t-mawarid-700 rounded-full animate-spin" />
             <p className="text-sm font-bold text-slate-600">جارٍ تحميل الطلبات الواردة…</p>
           </div>
         ) : err ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4">
+          <div className="rounded-2xl border border-slate-200 bg-canvas p-6 space-y-4">
             <ErrorBanner err={err} />
             <SecondaryBtn onClick={loadOrders}>إعادة المحاولة</SecondaryBtn>
           </div>
         ) : orders.length === 0 ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center space-y-3">
+          <div className="rounded-2xl border border-slate-200 bg-canvas p-10 text-center space-y-3">
             <div className="w-12 h-12 mx-auto rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center">
               <Icons.ShoppingBag className="w-6 h-6" />
             </div>
