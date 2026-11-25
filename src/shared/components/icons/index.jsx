@@ -1,8 +1,25 @@
 // ── حزمة أيقونات SVG القياسية (بدون أي إيموجي كأيقونة بنيوية) ──
 export const Icons = {
+  ChevronDown: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  ),
+  Sun: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" {...props}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" />
+    </svg>
+  ),
+  Moon: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" {...props}>
+      <path d="M20.9 13.4A9 9 0 1 1 10.6 3.1a7 7 0 0 0 10.3 10.3Z" />
+    </svg>
+  ),
+
   LogoMark: ({ className = 'w-8 h-8' }) => (
     <svg className={className} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="40" height="40" rx="10" className="fill-mawarid-700" />
+      <rect width="40" height="40" rx="10" className="fill-[var(--mw-logo)]" />
       {/* قطرة ماء وشعلة متداخلة هندسياً ترمز للموارد الحيوية */}
       <path d="M20 7C14 16 11 20 11 25C11 30 15 34 20 34C25 34 29 30 29 25C29 20 26 16 20 7Z" fill="#38BDF8" fillOpacity="0.3" />
       <path d="M20 12C16 18 14 21.5 14 25C14 28.3 16.7 31 20 31C23.3 31 26 28.3 26 25C26 21.5 24 18 20 12Z" fill="#38BDF8" />

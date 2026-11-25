@@ -66,7 +66,8 @@ function Shell() {
   const go = useCallback((s, p = {}) => {
     setParams(p)
     setScreen(s)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    window.scrollTo({ top: 0, behavior: reduceMotion ? 'instant' : 'smooth' })
   }, [])
 
   const showToast = useCallback((msg, ok = true) => {
@@ -154,7 +155,7 @@ function Shell() {
   const current = resolveCurrentScreen(screen, user)
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col selection:bg-mawarid-700 selection:text-white">
+    <div className="min-h-screen bg-canvas text-slate-800 font-sans flex flex-col">
       {screens[current] || <HomePage go={go} />}
       <Toast toast={toast} />
     </div>

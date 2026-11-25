@@ -1,0 +1,249 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --mw-brand: #0354a2;
+    --mw-logo: #0354a2;
+    --mw-gas: #947020;
+    --mw-gas-ink: #806018;
+    --mw-water: #0369a1;
+    --mw-fuel: #047857;
+
+    --mw-background: #ffffff;
+    --mw-surface: #f6f8fb;
+    --mw-surface-raised: #edf1f6;
+    --mw-text: #182b40;
+    --mw-text-secondary: #41546a;
+    --mw-text-muted: #5b6b7e;
+    --mw-border: #e2e8ef;
+    --mw-control-border: #77889a;
+
+    --mw-gas-soft: #faf3e4;
+    --mw-water-soft: #e9f5fc;
+    --mw-fuel-soft: #e7f5ef;
+    --mw-brand-soft: #edf5fc;
+    --mw-on-accent: #ffffff;
+
+    --mw-success-ink: #07634b;
+    --mw-success-soft: #e8f6ef;
+    --mw-success-border: #a6d8c6;
+    --mw-warning-ink: #804904;
+    --mw-warning-soft: #fff3dc;
+    --mw-warning-border: #e7c78e;
+    --mw-error-ink: #a7193e;
+    --mw-error-soft: #fff0f2;
+    --mw-error-border: #edb2bf;
+    --mw-info-ink: #15577c;
+    --mw-info-soft: #edf6fc;
+    --mw-info-border: #b3d7eb;
+    --mw-scrim: #080f18;
+
+    --mw-space-1: 4px;
+    --mw-space-2: 8px;
+    --mw-space-3: 12px;
+    --mw-space-4: 16px;
+    --mw-space-6: 24px;
+    --mw-space-8: 32px;
+    --mw-space-12: 48px;
+    --mw-radius-sm: 8px;
+    --mw-radius-md: 12px;
+    --mw-radius-lg: 16px;
+    --mw-radius-xl: 24px;
+
+    --mw-motion-fast: 150ms;
+    --mw-motion-normal: 250ms;
+    --mw-motion-page: 350ms;
+    --mw-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --mw-shadow-xs: 0 1px 2px rgb(15 23 42 / 0.05);
+    --mw-shadow-card: 0 1px 3px rgb(15 23 42 / 0.06), 0 8px 24px -8px rgb(15 23 42 / 0.10);
+  }
+
+  [data-theme="dark"] {
+    color-scheme: dark;
+    --mw-brand: #83c7fc;
+    --mw-gas: #dfbd76;
+    --mw-gas-ink: var(--mw-gas);
+    --mw-water: #67c4f5;
+    --mw-fuel: #76d4b1;
+
+    --mw-background: #101923;
+    --mw-surface: #192633;
+    --mw-surface-raised: #223141;
+    --mw-text: #eef3fa;
+    --mw-text-secondary: #c6d2e0;
+    --mw-text-muted: #a8b6c6;
+    --mw-border: #304050;
+    --mw-control-border: #7b8da0;
+
+    --mw-gas-soft: #382e20;
+    --mw-water-soft: #17374c;
+    --mw-fuel-soft: #17382e;
+    --mw-brand-soft: #20384f;
+    --mw-on-accent: #101923;
+
+    --mw-success-ink: #8cdec0;
+    --mw-success-soft: #19392f;
+    --mw-success-border: #346c5b;
+    --mw-warning-ink: #f1c77c;
+    --mw-warning-soft: #3b2c1d;
+    --mw-warning-border: #795b37;
+    --mw-error-ink: #ffadbd;
+    --mw-error-soft: #452534;
+    --mw-error-border: #875063;
+    --mw-info-ink: #a0d9f9;
+    --mw-info-soft: #20384c;
+    --mw-info-border: #3c6581;
+    --mw-shadow-card: 0 1px 3px rgb(4 10 16 / 0.25), 0 8px 24px -8px rgb(4 10 16 / 0.40);
+  }
+
+  :root, [data-resource] {
+    --mw-accent: var(--mw-brand);
+    --mw-accent-soft: var(--mw-brand-soft);
+    --mw-accent-hover: color-mix(in srgb, var(--mw-accent) 84%, var(--mw-text));
+    --mw-accent-border: color-mix(in srgb, var(--mw-accent) 30%, var(--mw-border));
+    /* Gas uses the approved gold for graphics and a darker shade for text on tinted surfaces. */
+    --mw-accent-ink: var(--mw-accent);
+  }
+
+  [data-resource="gas"] {
+    --mw-accent: var(--mw-gas);
+    --mw-accent-soft: var(--mw-gas-soft);
+    --mw-accent-ink: var(--mw-gas-ink);
+  }
+
+  [data-resource="water"] {
+    --mw-accent: var(--mw-water);
+    --mw-accent-soft: var(--mw-water-soft);
+  }
+
+  [data-resource="fuel"] {
+    --mw-accent: var(--mw-fuel);
+    --mw-accent-soft: var(--mw-fuel-soft);
+  }
+
+  html, body {
+    background: var(--mw-background);
+    color: var(--mw-text);
+  }
+
+  #root > div, #root > div > div:first-child {
+    transition: background-color var(--mw-motion-fast) var(--mw-ease-out);
+  }
+
+  body { font-family: Tajawal, 'Noto Sans Arabic', system-ui, sans-serif; font-weight: 500; line-height: 1.6; }
+  h1, h2, h3 { overflow-wrap: anywhere; }
+  button, input, select, textarea { font: inherit; }
+  input:not([type="checkbox"], [type="radio"]), select, textarea { font-size: 1rem; }
+  input:not([type="checkbox"], [type="radio"], [type="file"], [type="range"]), select, textarea {
+    min-inline-size: 0;
+    border-color: var(--mw-control-border);
+  }
+  input::placeholder, textarea::placeholder { color: var(--mw-text-muted); }
+  select { color-scheme: inherit; }
+  button, a, summary, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+
+  :is(button, a, summary, input, select, textarea, [tabindex]):focus-visible {
+    outline: 3px solid var(--mw-accent-ink) !important;
+    outline-offset: 2px;
+  }
+
+  ::selection { background: var(--mw-brand); color: var(--mw-on-accent); }
+  section[id] { scroll-margin-block-start: 6rem; }
+}
+
+@layer components {
+  .mw-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--mw-space-2);
+    min-height: 44px;
+    padding: var(--mw-space-2) var(--mw-space-4);
+    border: 1px solid transparent;
+    border-radius: var(--mw-radius-md);
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1.3;
+    cursor: pointer;
+    transition: color var(--mw-motion-fast), background-color var(--mw-motion-fast), border-color var(--mw-motion-fast);
+  }
+
+  .mw-button:disabled { opacity: .58; cursor: not-allowed; }
+  .mw-button-primary { background: var(--mw-accent); color: var(--mw-on-accent); }
+  .mw-button-primary:hover:enabled { background: var(--mw-accent-hover); }
+  .mw-button-secondary { background: var(--mw-background); border-color: var(--mw-control-border); color: var(--mw-text); }
+  .mw-button-secondary:hover:enabled { background: var(--mw-surface); }
+  .mw-icon-button { min-width: 44px; padding-inline: var(--mw-space-2); }
+
+  .mw-input {
+    width: 100%;
+    min-height: 48px;
+    border: 1px solid var(--mw-control-border);
+    border-radius: var(--mw-radius-md);
+    background-color: var(--mw-background);
+    padding: var(--mw-space-2) var(--mw-space-3);
+    color: var(--mw-text);
+    transition: border-color var(--mw-motion-fast), background-color var(--mw-motion-fast);
+  }
+
+  .mw-input[aria-invalid="true"] { border-color: var(--mw-error-ink); background: var(--mw-error-soft); }
+  .mw-input:focus { border-color: var(--mw-accent-ink); }
+
+  .mw-skip-link { position: absolute; inset-block-start: -100px; inset-inline-start: 1rem; z-index: 100; }
+  .mw-skip-link:focus { inset-block-start: 1rem; }
+  .mw-display { font-size: clamp(2rem, 1.55rem + 2.25vw, 2.5rem); font-weight: 900; line-height: 1.25; }
+  .mw-h1 { font-size: clamp(1.5rem, 1.2rem + 1.25vw, 2rem); font-weight: 800; line-height: 1.3; }
+  .mw-h2 { font-size: clamp(1.375rem, 1.2rem + .75vw, 1.75rem); font-weight: 800; line-height: 1.35; }
+  .mw-h3 { font-size: 1.25rem; font-weight: 700; line-height: 1.4; }
+  .mw-resource { color: var(--mw-accent-ink); background-color: var(--mw-accent-soft); }
+  .mw-logo { background: var(--mw-logo); }
+  .mw-service-summary { background: var(--mw-accent-soft); border: 1px solid var(--mw-accent-border); }
+  .mw-auth-card { padding: clamp(1rem, 4vw, 2rem); }
+  .mw-auth-card .cf-turnstile { inline-size: min(300px, calc(100vw - 16px)); }
+  .mw-auth-card .cf-turnstile iframe { max-inline-size: 100%; }
+}
+
+@layer utilities {
+  .mw-service-card { border-inline-start: 3px solid var(--mw-accent); }
+  .fade-in, .mw-fade-in { animation: mw-fade-in var(--mw-motion-page) var(--mw-ease-out); }
+  .sheet-up { animation: mw-sheet-up var(--mw-motion-normal) var(--mw-ease-out); }
+}
+
+@keyframes mw-fade-in {
+  from { opacity: 0; translate: 0 6px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+@keyframes mw-sheet-up {
+  from { translate: 0 100%; }
+  to { translate: 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.mw-map .leaflet-container { background: var(--mw-surface-raised); }
+.mw-map .leaflet-bar a {
+  width: 44px;
+  height: 44px;
+  line-height: 44px;
+  background: var(--mw-background);
+  color: var(--mw-text);
+  border-color: var(--mw-border);
+}
+.mw-map .leaflet-bar a:hover { background: var(--mw-surface); }
+.mw-map .leaflet-bar a.leaflet-disabled { color: var(--mw-text-muted); }
+.mw-map .leaflet-container .leaflet-control-attribution {
+  background: var(--mw-background);
+  color: var(--mw-text-secondary);
+}
+.mw-map .leaflet-control-attribution a { color: var(--mw-accent-ink); }

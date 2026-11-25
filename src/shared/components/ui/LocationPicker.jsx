@@ -79,7 +79,7 @@ export default function LocationPicker({
   const interactive = !readOnly && typeof onChange === 'function'
 
   return (
-    <div className="rounded-xl overflow-hidden border border-slate-200 relative z-0" style={{ height }} dir="ltr">
+    <div className="mw-map rounded-xl overflow-hidden border border-slate-200 relative z-0" style={{ height }} dir="ltr">
       <MapContainer
         center={position || initialCenter}
         zoom={position ? 16 : initialZoom}
