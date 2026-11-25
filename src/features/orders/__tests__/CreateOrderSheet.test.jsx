@@ -4,11 +4,10 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
 import CreateOrderSheet from '../components/CreateOrderSheet'
 
-vi.mock('../../auth/hooks/useAuth', () => ({
-  useAuth: () => ({
-    user: { role_name: 'consumer', name: 'أحمد العبسي' },
-  }),
-}))
+vi.mock('../../auth/hooks/useAuth', () => {
+  const user = { role_name: 'consumer', name: 'أحمد العبسي' }
+  return { useAuth: () => ({ user }) }
+})
 
 const SAMPLE_STOCK = {
   id: 'e4226f8b-f41e-42ef-8ba0-04470295cb45',

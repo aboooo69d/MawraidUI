@@ -159,7 +159,7 @@ describe('StockUnitsPage — تعديل الوحدات', () => {
     fireEvent.click(screen.getByText('حفظ التعديلات'))
 
     await waitFor(() => expect(calls.filter((c) => c.method === 'PATCH').length).toBe(2))
-    expect(showToast).toHaveBeenCalledWith('تم تعديل الاسم — لا يمكن تغيير معامل وحدة مستخدمة سابقاً')
+    await waitFor(() => expect(showToast).toHaveBeenCalledWith('تم حفظ التعديل — لا يمكن تغيير معامل وحدة مستخدمة سابقاً'))
   })
 
   it('عند 1610 بدون تغيير الاسم يعرض رسالة الخطأ', async () => {
