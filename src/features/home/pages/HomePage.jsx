@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { useAuth } from '../../auth/hooks/useAuth'
 import { BrandLogo, Icons, ResourceBadge, ThemeToggle } from '../../../shared/components/ui'
+import { DISTRICTS } from '../../../shared/constants/distributionPoints'
 import { ROUTES } from '../../../shared/constants/routes'
 
 const NAV_LINKS = [
@@ -17,36 +18,9 @@ const RESOURCES = [
   { type: 'fuel', name: 'الوقود', icon: Icons.Fuel },
 ]
 
-const DISTRICTS = [
-  {
-    id: 'al-qahirah', name: 'القاهرة',
-    hubs: [
-      { name: 'مركز مسبح للتوزيع (غاز)', area: 'حي المسبح · جوار مدرسة الشعب', resource: 'gas' },
-      { name: 'محطة مياه النسيم', area: 'جولة سنان · شارع 26', resource: 'water' },
-      { name: 'محطة الصقر للمشتقات', area: 'شارع جمال · قرب جولة العواضي', resource: 'fuel' },
-    ],
-  },
-  {
-    id: 'al-mudhaffar', name: 'المظفر',
-    hubs: [
-      { name: 'مركز حبيل سلمان للغاز المنزلي', area: 'حبيل سلمان · جوار جامعة تعز', resource: 'gas' },
-      { name: 'نقطة توزيع صهاريج صينة', area: 'وادي المعقب · صينة', resource: 'water' },
-      { name: 'محطة بيرباشا المركزية للوقود', area: 'مدخل بيرباشا · خط الحصب', resource: 'fuel' },
-    ],
-  },
-  {
-    id: 'salah', name: 'صالة',
-    hubs: [
-      { name: 'مركز الجحملية للغاز', area: 'الجحملية العليا · قرب المستشفى العسكري', resource: 'gas' },
-      { name: 'محطة مياه ثعبات وحوض الأشراف', area: 'شارع 16 · حوض الأشراف', resource: 'water' },
-      { name: 'نقطة توزيع المحروقات', area: 'العسكري · جوار مركز الشرطة', resource: 'fuel' },
-    ],
-  },
-]
-
 const FAQS = [
   ['كيف أسجّل حساباً في منصة موارد؟', 'اختر حساب مستفيد أو مقدم خدمة، ثم أدخل البيانات المطلوبة وأكّد رقم هاتفك.'],
-  ['كيف أجد المخزون القريب مني؟', 'بعد تسجيل الدخول، افتح استكشاف المخزون وحدد عنوانك أو استخدم موقعك الحالي لعرض المسافة.'],
+  ['كيف أجد المخزون القريب مني؟', 'افتح استكشاف المخزون وحدد عنوانك أو استخدم موقعك الحالي لعرض المسافة.'],
   ['كيف أعرف الكمية والسعر؟', 'تعرض تفاصيل المخزون الكمية المتاحة ووحدات البيع والأسعار التي سجّلها مقدم الخدمة.'],
   ['كيف أتابع حالة طلبي؟', 'يمكنك عرض طلباتك وحالاتها من «طلباتي وحجوزاتي» في لوحة التحكم.'],
 ]
@@ -63,15 +37,13 @@ const navClass = 'inline-flex items-center min-h-11 rounded-lg px-2.5 text-sm fo
 export default function HomePage({ go }) {
   const { user } = useAuth()
   const [districtId, setDistrictId] = useState(DISTRICTS[0].id)
-  const [selectedResource, setSelectedResource] = useState(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [regOpen, setRegOpen] = useState(false)
   const registerButton = useRef(null)
   const menuButton = useRef(null)
   const district = DISTRICTS.find(({ id }) => id === districtId)
-  const canBrowse = user?.role_name === 'consumer' || user?.role_name === 'admin'
   const openAccount = () => go(user ? ROUTES.DASHBOARD : ROUTES.LOGIN)
-  const browseStocks = () => go(canBrowse ? ROUTES.CONSUMER_STOCKS : user ? ROUTES.DASHBOARD : ROUTES.LOGIN)
+  const browseStocks = () => go(ROUTES.CONSUMER_STOCKS)
   const accountLabel = user ? 'لوحة التحكم' : 'تسجيل الدخول'
 
   function closeOnEscape(event, close, trigger) {
@@ -155,25 +127,31 @@ export default function HomePage({ go }) {
         <section id="resources" className={`${sectionWidth} pb-10 sm:pb-14`} aria-labelledby="resources-title">
           <h2 id="resources-title" className="mw-h2 mb-4">استكشف الموارد</h2>
           <div className="mw-mini-resource-grid" role="group" aria-labelledby="resources-title">
-            {RESOURCES.map(({ type, name, icon: Icon }) => (
-              <button
-                key={type}
-                type="button"
-                data-resource={type}
-                aria-pressed={selectedResource === type}
-                onClick={() => setSelectedResource((current) => current === type ? null : type)}
-                className="mw-mini-resource"
-              >
-                <span className="mw-resource grid h-10 w-10 shrink-0 place-items-center rounded-xl">
-                  <Icon className="w-6 h-6" aria-hidden="true" />
-                </span>
-                <span>{name}</span>
-              </button>
-            ))}
+            {RESOURCES.map(({ type, name, icon: Icon }) => {
+              const available = type === 'gas'
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  data-resource={type}
+                  disabled={!available}
+                  onClick={available ? () => go(ROUTES.CONSUMER_STOCKS, { resource: 'gas' }) : undefined}
+                  className="mw-mini-resource"
+                >
+                  <span className="mw-resource grid h-10 w-10 shrink-0 place-items-center rounded-xl">
+                    <Icon className="w-6 h-6" aria-hidden="true" />
+                  </span>
+                  <span className="mw-mini-resource-label">
+                    {name}
+                    {!available && <span className="mw-upcoming-badge">قريبًا</span>}
+                  </span>
+                </button>
+              )
+            })}
           </div>
           <div className="mt-5 flex flex-wrap items-center gap-2">
-            <button type="button" data-resource={selectedResource ?? undefined} className="mw-button mw-button-primary" onClick={browseStocks}>
-              {canBrowse ? 'استكشاف المخزون المتاح' : user ? 'الانتقال إلى لوحة التحكم' : 'تسجيل الدخول لاستكشاف المخزون'}
+            <button type="button" className="mw-button mw-button-primary" onClick={browseStocks}>
+              استكشاف المخزون المتاح
             </button>
             {!user && <button type="button" className="mw-button mw-button-secondary" onClick={() => go(ROUTES.REGISTER_CONSUMER)}>تسجيل مستفيد</button>}
           </div>
@@ -184,7 +162,7 @@ export default function HomePage({ go }) {
             <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
               <div>
                 <h2 id="centers-title" className="mw-h2">نقاط التوزيع في تعز</h2>
-                <p className="mt-1 text-sm text-slate-600">أمثلة من دليل المواقع. راجع المخزون بعد تسجيل الدخول لمعرفة التوفر الحالي.</p>
+                <p className="mt-1 text-sm text-slate-600">أمثلة من دليل المواقع. راجع المخزون لمعرفة التوفر الحالي.</p>
               </div>
               <div role="group" aria-label="المديرية" className="flex flex-wrap gap-1.5">
                 {DISTRICTS.map(({ id, name }) => (

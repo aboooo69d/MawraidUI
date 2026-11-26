@@ -228,14 +228,29 @@
     cursor: pointer;
     transition: background-color var(--mw-motion-fast), border-color var(--mw-motion-fast), color var(--mw-motion-fast);
   }
-  .mw-mini-resource[aria-pressed="true"] {
+  .mw-mini-resource:not(:disabled):active {
     background-color: var(--mw-accent-soft);
     border-color: var(--mw-accent-ink);
     box-shadow: inset 0 0 0 1px var(--mw-accent-ink);
     color: var(--mw-accent-ink);
   }
   @media (hover: hover) {
-    .mw-mini-resource:hover { border-color: var(--mw-accent-ink); }
+    .mw-mini-resource:not(:disabled):hover { border-color: var(--mw-accent-ink); }
+  }
+  .mw-mini-resource:disabled { cursor: default; }
+  .mw-mini-resource-label {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 2px 4px;
+  }
+  .mw-upcoming-badge {
+    border-radius: 999px;
+    padding-inline: 4px;
+    font-size: 0.625rem;
+    background: var(--mw-surface);
+    color: var(--mw-text-muted);
   }
   .mw-service-summary { background: var(--mw-accent-soft); border: 1px solid var(--mw-accent-border); }
   .mw-auth-card { padding: clamp(1rem, 4vw, 2rem); }

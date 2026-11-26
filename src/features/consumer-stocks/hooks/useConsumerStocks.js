@@ -6,8 +6,6 @@ import { enrichStocksWithDistance, isValidCoords } from '../utils/geo'
 const DEFAULT_PAGE_SIZE = 10
 const SEARCH_DEBOUNCE_MS = 350
 
-const isSessionExpired = (err) => err?.status === 401 || err?.code === 1106
-
 export const DEFAULT_FILTERS = {
   name: '',
   stockTypeId: null,
@@ -15,7 +13,7 @@ export const DEFAULT_FILTERS = {
   maxDistanceKm: null, // null = بدون حد أقصى للمسافة
 }
 
-export function useConsumerStocks({ isConsumer = true, onSessionExpired } = {}) {
+export function useConsumerStocks({ isConsumer = true, stockType } = {}) {
   // ── حالة العناوين والموقع ──
   const [addressLoading, setAddressLoading] = useState(Boolean(isConsumer))
   const [addressErr, setAddressErr] = useState(null)
@@ -44,6 +42,7 @@ export function useConsumerStocks({ isConsumer = true, onSessionExpired } = {}) 
 
   // 1) جلب تصنيفات المخزون للفلتر
   useEffect(() => {
+    if (stockType) return
     let active = true
     stockApi
       .getStockTypes()
@@ -56,11 +55,14 @@ export function useConsumerStocks({ isConsumer = true, onSessionExpired } = {}) 
     return () => {
       active = false
     }
-  }, [])
+  }, [stockType])
 
   // 2) جلب العنوان الافتراضي وقائمة عناوين المستفيد
   const loadAddresses = useCallback(async () => {
     if (!isConsumer) {
+      setDefaultAddress(null)
+      setAddresses([])
+      setSelectedAddressId(null)
       setAddressLoading(false)
       return
     }
@@ -83,10 +85,6 @@ export function useConsumerStocks({ isConsumer = true, onSessionExpired } = {}) 
       setAddresses(mergedList)
       setSelectedAddressId(defAddr?.id || null)
     } catch (e) {
-      if (isSessionExpired(e)) {
-        onSessionExpired?.()
-        return
-      }
       setAddressErr(e)
       setDefaultAddress(null)
       setAddresses([])
@@ -94,7 +92,7 @@ export function useConsumerStocks({ isConsumer = true, onSessionExpired } = {}) 
     } finally {
       setAddressLoading(false)
     }
-  }, [isConsumer, onSessionExpired])
+  }, [isConsumer])
 
   useEffect(() => {
     loadAddresses()
@@ -113,9 +111,9 @@ export function useConsumerStocks({ isConsumer = true, onSessionExpired } = {}) 
 
   // العنوان المختار حالياً
   const selectedAddress = useMemo(() => {
-    if (!selectedAddressId) return null
+    if (!isConsumer || !selectedAddressId) return null
     return addresses.find((a) => a.id === selectedAddressId) || (defaultAddress?.id === selectedAddressId ? defaultAddress : null)
-  }, [addresses, defaultAddress, selectedAddressId])
+  }, [addresses, defaultAddress, isConsumer, selectedAddressId])
 
   // الإحداثيات النشطة: GPS إن فُعِّل، وإلا إحداثيات العنوان المختار (الافتراضي أولاً)
   const activeCoords = useMemo(() => {
@@ -142,6 +140,7 @@ export function useConsumerStocks({ isConsumer = true, onSessionExpired } = {}) 
 
     const query = {
       name: filters.name || undefined,
+      stock_type: stockType,
       stock_type_id: filters.stockTypeId || undefined,
       in_stock: typeof filters.inStock === 'boolean' ? filters.inStock : undefined,
       page,
@@ -164,17 +163,13 @@ export function useConsumerStocks({ isConsumer = true, onSessionExpired } = {}) 
       setMeta(res.meta)
     } catch (e) {
       if (seq !== seqRef.current) return
-      if (isSessionExpired(e)) {
-        onSessionExpired?.()
-        return
-      }
       setStocks([])
       setMeta(null)
       setErr(e)
     } finally {
       if (seq === seqRef.current) setLoading(false)
     }
-  }, [addressLoading, filters, page, activeCoords, onSessionExpired])
+  }, [addressLoading, filters, page, activeCoords, stockType])
 
   useEffect(() => {
     fetchStocks()

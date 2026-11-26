@@ -4,7 +4,7 @@ import { PHONE_RE } from '../../../shared/constants/regex'
 import { Icons, BrandLogo, Logo, ErrorBanner, Label, PhoneInput, TextInput, PrimaryBtn, BackBtn, ThemeToggle } from '../../../shared/components/ui'
 import TurnstileWidget from '../components/TurnstileWidget'
 
-export default function Login({ go }) {
+export default function Login({ go, onSuccess, onBack }) {
   const { login } = useAuth()
   const [phone, setPhone] = useState('')
   const [pass, setPass] = useState('')
@@ -22,8 +22,9 @@ export default function Login({ go }) {
     if (!turnstileToken) return setErr({ code: 2000, message: 'يرجى إكمال التحقق الأمني أولاً' })
     setLoading(true)
     try {
-      await login(phone, pass, turnstileToken)
-      go('dashboard')
+      const account = await login(phone, pass, turnstileToken)
+      if (onSuccess) onSuccess(account)
+      else go('dashboard')
     } catch (e) {
       setErr(e)
       setTurnstileToken(null)
@@ -43,7 +44,7 @@ export default function Login({ go }) {
         </button>
         <div className="flex shrink-0 items-center gap-1.5">
           <ThemeToggle />
-          <BackBtn onClick={() => go('home')} label="العودة للرئيسية" />
+          <BackBtn onClick={onBack || (() => go('home'))} label={onBack ? 'العودة لتفاصيل الخدمة' : 'العودة للرئيسية'} />
         </div>
       </div>
 

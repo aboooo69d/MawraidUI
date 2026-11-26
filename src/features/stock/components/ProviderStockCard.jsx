@@ -43,15 +43,17 @@ export default function ProviderStockCard({ go, refreshTrigger = 0 }) {
         {stocks.map((stock) => {
           const mainUnit = stock?.units?.find((u) => u.is_main)
           const balances = Array.isArray(stock?.balances) ? stock.balances : []
+          const resource = getResourceTheme(stock.type?.slug)
+          const StockIcon = resource === 'gas' ? Icons.Gas : Icons.Box
           const gazTypeLabel = formatGazStockType(stock?.stock_details?.gaz_stock_type)
 
           return (
-            <div key={stock.id} data-resource={getResourceTheme(stock.type?.slug)} className="mw-service-card min-w-0 rounded-2xl border border-slate-200 bg-canvas p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+            <div key={stock.id} data-resource={resource} className="mw-service-card min-w-0 rounded-2xl border border-slate-200 bg-canvas p-5 sm:p-6 shadow-xs flex flex-col justify-between">
               <div>
                 <div className="flex flex-wrap items-start justify-between gap-3 pb-4 border-b border-slate-100">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="w-9 h-9 rounded-lg bg-mawarid-50 text-mawarid-700 flex items-center justify-center shrink-0">
-                      <Icons.Box className="w-5 h-5" aria-hidden="true" />
+                      <StockIcon className="w-5 h-5" aria-hidden="true" />
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">

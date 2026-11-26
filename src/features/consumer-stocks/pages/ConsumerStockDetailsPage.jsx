@@ -14,13 +14,17 @@ import CreateOrderSheet from '../../orders/components/CreateOrderSheet'
 export default function ConsumerStockDetailsPage({
   go,
   stockId,
+  resource,
+  resumeOrder,
+  unitId,
+  onOrderSignIn,
   showToast,
   onSessionExpired,
   onCreateOrder,
 }) {
   const { user } = useAuth()
   const isConsumer = user?.role_name === 'consumer'
-  const [orderSheet, setOrderSheet] = useState({ open: false, unitId: null })
+  const [orderSheet, setOrderSheet] = useState({ open: Boolean(resumeOrder), unitId: unitId ?? null })
   const [createdOrder, setCreatedOrder] = useState(null)
 
   const {
@@ -31,9 +35,12 @@ export default function ConsumerStockDetailsPage({
     loading,
     err,
     reload,
-  } = useConsumerStockDetails(stockId, { isConsumer, onSessionExpired })
+  } = useConsumerStockDetails(stockId, { isConsumer })
 
+  const stockResource = getResourceTheme(stock?.type?.slug) || resource
+  const StockIcon = stockResource === 'gas' ? Icons.Gas : Icons.Box
   const isAvailable = Number(stock?.available) > 0
+  const canStartOrder = !user || isConsumer
   const units = Array.isArray(stock?.units) ? stock.units : []
   const balances = Array.isArray(stock?.balances) ? stock.balances : []
   const mainUnit = units.find((u) => u.is_main) || units[0]
@@ -44,9 +51,14 @@ export default function ConsumerStockDetailsPage({
   const totalOrders = pendingOrders + completedOrders
 
   const hasValidLocation = isValidCoords(stock?.location)
+  const backToStockList = () => go(ROUTES.CONSUMER_STOCKS, { resource })
 
   function handleCreateOrder(preselectedUnitId = null) {
-    if (!stock || !isAvailable || !isConsumer) return
+    if (!stock || !isAvailable || !canStartOrder) return
+    if (!user) {
+      onOrderSignIn({ stockId, resource, unitId: preselectedUnitId })
+      return
+    }
     if (typeof onCreateOrder === 'function') {
       onCreateOrder(stock, preselectedUnitId)
       return
@@ -62,12 +74,12 @@ export default function ConsumerStockDetailsPage({
   }
 
   return (
-    <div dir="rtl" data-resource={getResourceTheme(stock?.type?.slug)} className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans">
+    <div dir="rtl" data-resource={stockResource} className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans">
       {/* ── الترويسة ── */}
       <header className="bg-canvas border-b border-slate-200 sticky top-0 z-30 shadow-xs">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:justify-between">
           <div className="contents sm:flex sm:items-center sm:gap-2 sm:min-w-0">
-            <BackBtn onClick={() => go(ROUTES.CONSUMER_STOCKS)} label="قائمة المخزون" />
+            <BackBtn onClick={backToStockList} label="قائمة المخزون" />
             <div className="col-span-2 row-start-2 min-w-0">
               <h1 className="text-base sm:text-xl font-extrabold text-slate-900 leading-tight">
                 {stock?.type?.name || 'تفاصيل المخزون'}
@@ -103,16 +115,16 @@ export default function ConsumerStockDetailsPage({
           </div>
         ) : err ? (
           <div className="rounded-2xl border border-slate-200 bg-canvas p-6 space-y-4">
-            <ErrorBanner err={err} />
+            <ErrorBanner err={user ? err : new Error('تعذر عرض تفاصيل هذا المخزون للزوار حاليًا.')} />
             <div className="flex flex-wrap gap-2">
               <SecondaryBtn onClick={reload}>إعادة المحاولة</SecondaryBtn>
-              <SecondaryBtn onClick={() => go(ROUTES.CONSUMER_STOCKS)}>العودة لقائمة المخزون</SecondaryBtn>
+              <SecondaryBtn onClick={backToStockList}>العودة لقائمة المخزون</SecondaryBtn>
             </div>
           </div>
         ) : !stock ? (
           <div className="rounded-2xl border border-slate-200 bg-canvas p-10 text-center space-y-3">
             <p className="text-sm font-bold text-slate-600">لم يتم العثور على بيانات هذا المخزون.</p>
-            <SecondaryBtn onClick={() => go(ROUTES.CONSUMER_STOCKS)}>العودة لقائمة المخزون</SecondaryBtn>
+            <SecondaryBtn onClick={backToStockList}>العودة لقائمة المخزون</SecondaryBtn>
           </div>
         ) : (
           <>
@@ -236,7 +248,7 @@ export default function ConsumerStockDetailsPage({
               <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="rounded-xl bg-canvas border border-slate-200 px-4 py-3 flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-canvas border border-slate-200 flex items-center justify-center text-mawarid-700 shrink-0">
-                    <Icons.Box className="w-5 h-5" />
+                    <StockIcon className="w-5 h-5" aria-hidden="true" />
                   </div>
                   <div>
                     <div className="text-xs font-bold text-slate-500">الكمية المتوفرة</div>
@@ -267,12 +279,12 @@ export default function ConsumerStockDetailsPage({
                   <PrimaryBtn
                     type="button"
                     onClick={() => handleCreateOrder(null)}
-                    disabled={!isAvailable || !isConsumer}
+                    disabled={!isAvailable || !canStartOrder}
                     className="!mt-0 flex-1 sm:min-w-[190px]"
                   >
                     <Icons.Plus className="w-4 h-4" />
                     <span>
-                      {!isConsumer
+                      {!canStartOrder
                         ? 'متاح لحسابات المستفيدين فقط'
                         : isAvailable
                         ? 'إنشاء طلب جديد'
@@ -284,7 +296,7 @@ export default function ConsumerStockDetailsPage({
             </section>
 
             {/* 2) إحصائيات الطلبات */}
-            <section aria-label="إحصائيات الطلبات" className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {(isConsumer || user?.role_name === 'admin') && <section aria-label="إحصائيات الطلبات" className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="rounded-2xl border border-amber-200 bg-canvas p-4 shadow-xs flex items-center justify-between">
                 <div>
                   <p className="text-xs font-bold text-slate-500">الطلبات قيد الانتظار</p>
@@ -320,7 +332,7 @@ export default function ConsumerStockDetailsPage({
                   <Icons.FileText className="w-5 h-5" />
                 </div>
               </div>
-            </section>
+            </section>}
 
             {/* 3) الوحدات المتاحة والأسعار */}
             <section className="rounded-2xl border border-slate-200 bg-canvas p-5 sm:p-6 shadow-xs space-y-4">
@@ -380,7 +392,7 @@ export default function ConsumerStockDetailsPage({
                           )}
                         </div>
 
-                        {isConsumer && unitAmount > 0 && (
+                        {canStartOrder && isAvailable && unitAmount > 0 && (
                           <div className="pt-1">
                             <button
                               type="button"
@@ -465,7 +477,7 @@ export default function ConsumerStockDetailsPage({
 
       {isConsumer && (
         <CreateOrderSheet
-          open={orderSheet.open}
+          open={orderSheet.open && isAvailable && !loading}
           stock={stock}
           initialUnitId={orderSheet.unitId}
           defaultAddress={defaultAddress}

@@ -40,10 +40,13 @@ const PROTECTED_ROLES = new Map([
   [ROUTES.PROVIDER_ORDER_DETAILS, ['provider']],
   [ROUTES.CITIZEN_ADDRESSES, ['consumer']],
   [ROUTES.ADMIN_ADDRESSES, ['admin']],
-  [ROUTES.CONSUMER_STOCKS, ['consumer', 'admin']],
-  [ROUTES.CONSUMER_STOCK_DETAILS, ['consumer', 'admin']],
   [ROUTES.CONSUMER_ORDERS, ['consumer']],
   [ROUTES.CONSUMER_ORDER_DETAILS, ['consumer']],
+])
+
+const AUTH_SCREENS = new Set([
+  ROUTES.LOGIN, ROUTES.REGISTER_CONSUMER, ROUTES.REGISTER_PROVIDER,
+  ROUTES.OTP, ROUTES.FORGOT_PASSWORD, ROUTES.RESET_PASSWORD,
 ])
 
 export function resolveCurrentScreen(screen, user) {
@@ -53,7 +56,8 @@ export function resolveCurrentScreen(screen, user) {
     if (!allowedRoles.includes(user.role_name)) return ROUTES.DASHBOARD
     return screen
   }
-  if (user && screen !== ROUTES.DASHBOARD && screen !== ROUTES.HOME) return ROUTES.DASHBOARD
+  if (!user && screen === ROUTES.DASHBOARD) return ROUTES.LOGIN
+  if (user && AUTH_SCREENS.has(screen)) return ROUTES.DASHBOARD
   return screen
 }
 
@@ -61,14 +65,32 @@ function Shell() {
   const { user, clearSession } = useAuth()
   const [screen, setScreen] = useState(ROUTES.HOME)
   const [params, setParams] = useState({})
+  const [orderIntent, setOrderIntent] = useState(null)
   const [toast, setToast] = useState(null)
 
   const go = useCallback((s, p = {}) => {
+    if (!AUTH_SCREENS.has(s)) setOrderIntent(null)
     setParams(p)
     setScreen(s)
     const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
     window.scrollTo({ top: 0, behavior: reduceMotion ? 'instant' : 'smooth' })
   }, [])
+
+  function signInForOrder(intent) {
+    setOrderIntent(intent)
+    go(ROUTES.LOGIN)
+  }
+
+  function afterLogin(account) {
+    if (!orderIntent) {
+      go(ROUTES.DASHBOARD)
+      return
+    }
+    go(ROUTES.CONSUMER_STOCK_DETAILS, {
+      ...orderIntent,
+      resumeOrder: account?.role_name === 'consumer',
+    })
+  }
 
   const showToast = useCallback((msg, ok = true) => {
     setToast({ msg, ok })
@@ -83,7 +105,13 @@ function Shell() {
 
   const screens = {
     [ROUTES.HOME]: <HomePage go={go} />,
-    [ROUTES.LOGIN]: <LoginPage go={go} />,
+    [ROUTES.LOGIN]: (
+      <LoginPage
+        go={go}
+        onSuccess={afterLogin}
+        onBack={orderIntent ? () => go(ROUTES.CONSUMER_STOCK_DETAILS, orderIntent) : undefined}
+      />
+    ),
     [ROUTES.REGISTER_CONSUMER]: <RegisterConsumer go={go} />,
     [ROUTES.REGISTER_PROVIDER]: <RegisterProvider go={go} />,
     [ROUTES.OTP]: <OtpPage go={go} phone={params.phone} />,
@@ -98,11 +126,16 @@ function Shell() {
     ),
     [ROUTES.CITIZEN_ADDRESSES]: <CitizenAddressesPage go={go} showToast={showToast} onSessionExpired={onAddressSessionExpired} />,
     [ROUTES.ADMIN_ADDRESSES]: <AdminAddressesPage go={go} onSessionExpired={onAddressSessionExpired} />,
-    [ROUTES.CONSUMER_STOCKS]: <ConsumerStocksPage go={go} onSessionExpired={onAddressSessionExpired} />,
+    [ROUTES.CONSUMER_STOCKS]: <ConsumerStocksPage key={params.resource || 'all'} go={go} resource={params.resource} />,
     [ROUTES.CONSUMER_STOCK_DETAILS]: (
       <ConsumerStockDetailsPage
+        key={params.stockId}
         go={go}
         stockId={params.stockId}
+        resource={params.resource}
+        resumeOrder={params.resumeOrder}
+        unitId={params.unitId}
+        onOrderSignIn={signInForOrder}
         showToast={showToast}
         onSessionExpired={onAddressSessionExpired}
       />

@@ -13,8 +13,8 @@ describe('Mawarid homepage', () => {
     const go = vi.fn()
     render(<HomePage go={go} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'تسجيل الدخول لاستكشاف المخزون' }))
-    expect(go).toHaveBeenLastCalledWith(ROUTES.LOGIN)
+    fireEvent.click(screen.getByRole('button', { name: 'استكشاف المخزون المتاح' }))
+    expect(go).toHaveBeenLastCalledWith(ROUTES.CONSUMER_STOCKS)
 
     fireEvent.click(screen.getByRole('button', { name: 'إنشاء حساب' }))
     fireEvent.click(screen.getByRole('button', { name: 'وكيل / مقدم خدمة' }))
@@ -28,7 +28,7 @@ describe('Mawarid homepage', () => {
   it.each([
     ['consumer', 'استكشاف المخزون المتاح', ROUTES.CONSUMER_STOCKS],
     ['admin', 'استكشاف المخزون المتاح', ROUTES.CONSUMER_STOCKS],
-    ['provider', 'الانتقال إلى لوحة التحكم', ROUTES.DASHBOARD],
+    ['provider', 'استكشاف المخزون المتاح', ROUTES.CONSUMER_STOCKS],
   ])('uses an existing destination for the %s role', (role_name, name, route) => {
     useAuth.mockReturnValue({ user: { role_name } })
     const go = vi.fn()
@@ -38,25 +38,18 @@ describe('Mawarid homepage', () => {
     expect(go).toHaveBeenCalledWith(route)
   })
 
-  it('applies the selected resource accent while preserving the stock destination', () => {
-    useAuth.mockReturnValue({ user: { role_name: 'consumer' } })
+  it('opens Gas from the card icon and leaves upcoming cards disabled', () => {
+    useAuth.mockReturnValue({ user: null })
     const go = vi.fn()
     render(<HomePage go={go} />)
-    const water = screen.getByRole('button', { name: 'المياه', exact: true })
     const gas = screen.getByRole('button', { name: 'الغاز', exact: true })
-    const browse = screen.getByRole('button', { name: 'استكشاف المخزون المتاح' })
-
-    fireEvent.click(water)
-    expect(water.getAttribute('aria-pressed')).toBe('true')
-    expect(browse.dataset.resource).toBe('water')
-    fireEvent.click(gas)
-    expect(water.getAttribute('aria-pressed')).toBe('false')
-    expect(gas.getAttribute('aria-pressed')).toBe('true')
-    expect(browse.dataset.resource).toBe('gas')
+    for (const label of [/المياه.*قريبًا/, /الوقود.*قريبًا/]) {
+      const card = screen.getByRole('button', { name: label })
+      expect(card.disabled).toBe(true)
+      fireEvent.click(card)
+    }
     expect(go).not.toHaveBeenCalled()
-    fireEvent.click(browse)
-    expect(go).toHaveBeenCalledWith(ROUTES.CONSUMER_STOCKS)
-    fireEvent.click(gas)
-    expect(browse.hasAttribute('data-resource')).toBe(false)
+    fireEvent.click(gas.querySelector('svg'))
+    expect(go).toHaveBeenCalledWith(ROUTES.CONSUMER_STOCKS, { resource: 'gas' })
   })
 })

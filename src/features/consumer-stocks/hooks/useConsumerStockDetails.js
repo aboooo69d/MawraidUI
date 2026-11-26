@@ -3,9 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { addressesApi, stockApi } from '../../../services/api'
 import { getStockDistance } from '../utils/geo'
 
-const isSessionExpired = (err) => err?.status === 401 || err?.code === 1106
-
-export function useConsumerStockDetails(stockId, { isConsumer = true, onSessionExpired } = {}) {
+export function useConsumerStockDetails(stockId, { isConsumer = true } = {}) {
   const [stock, setStock] = useState(null)
   const [defaultAddress, setDefaultAddress] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -36,16 +34,12 @@ export function useConsumerStockDetails(stockId, { isConsumer = true, onSessionE
       setDefaultAddress(cachedDefault)
     } catch (e) {
       if (seq !== seqRef.current) return
-      if (isSessionExpired(e)) {
-        onSessionExpired?.()
-        return
-      }
       setStock(null)
       setErr(e)
     } finally {
       if (seq === seqRef.current) setLoading(false)
     }
-  }, [stockId, isConsumer, onSessionExpired])
+  }, [stockId, isConsumer])
 
   useEffect(() => {
     load()
@@ -55,13 +49,13 @@ export function useConsumerStockDetails(stockId, { isConsumer = true, onSessionE
   }, [load])
 
   const distance = useMemo(
-    () => getStockDistance(stock, defaultAddress?.location),
-    [stock, defaultAddress]
+    () => getStockDistance(stock, isConsumer ? defaultAddress?.location : null),
+    [stock, defaultAddress, isConsumer]
   )
 
   return {
     stock,
-    defaultAddress,
+    defaultAddress: isConsumer ? defaultAddress : null,
     distanceKm: distance.distance_km,
     distanceFormatted: distance.distance_formatted,
     loading,

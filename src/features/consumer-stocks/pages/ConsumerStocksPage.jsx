@@ -1,6 +1,7 @@
 // ═══════════ شاشة استكشاف المخزون المتاح للمستفيدين ═══════════
 import { useAuth } from '../../auth/hooks/useAuth'
-import { BackBtn, ErrorBanner, Icons, SecondaryBtn, ThemeToggle } from '../../../shared/components/ui'
+import { BackBtn, ErrorBanner, Icons, ResourceBadge, SecondaryBtn, ThemeToggle } from '../../../shared/components/ui'
+import { DISTRICTS } from '../../../shared/constants/distributionPoints'
 import { getResourceTheme } from '../../../shared/constants/resources'
 import { ROUTES } from '../../../shared/constants/routes'
 import { formatAmount } from '../utils/format'
@@ -9,9 +10,11 @@ import AddressLocationBar from '../components/AddressLocationBar'
 import StockFilters from '../components/StockFilters'
 import ConsumerStockCard from '../components/ConsumerStockCard'
 
-export default function ConsumerStocksPage({ go, onSessionExpired }) {
+export default function ConsumerStocksPage({ go, resource: service }) {
   const { user } = useAuth()
   const isConsumer = user?.role_name === 'consumer'
+  const isGas = service === 'gas'
+  const backToHome = isGas || !user
 
   const {
     addressLoading,
@@ -42,9 +45,9 @@ export default function ConsumerStocksPage({ go, onSessionExpired }) {
     loading,
     err,
     reload,
-  } = useConsumerStocks({ isConsumer, onSessionExpired })
+  } = useConsumerStocks({ isConsumer, stockType: isGas ? 'gaz' : undefined })
 
-  const resource = getResourceTheme(stockTypes.find(({ id }) => id === filters.stockTypeId)?.slug)
+  const resource = isGas ? 'gas' : getResourceTheme(stockTypes.find(({ id }) => id === filters.stockTypeId)?.slug)
   const totalPages = Math.max(1, Number(meta?.total_pages) || 1)
   const total = meta?.total
 
@@ -54,15 +57,17 @@ export default function ConsumerStocksPage({ go, onSessionExpired }) {
       <header className="bg-canvas border-b border-slate-200 sticky top-0 z-30 shadow-xs">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:justify-between">
           <div className="contents sm:flex sm:items-center sm:gap-2 sm:min-w-0">
-            <BackBtn onClick={() => go(ROUTES.DASHBOARD)} label="لوحة التحكم" />
+            <BackBtn onClick={() => go(backToHome ? ROUTES.HOME : ROUTES.DASHBOARD)} label={backToHome ? 'الرئيسية' : 'لوحة التحكم'} />
             <div className="col-span-2 row-start-2 min-w-0">
               <h1 className="text-base sm:text-xl font-extrabold text-slate-900 leading-tight">
-                استكشاف المخزون المتاح
+                {isGas ? 'خدمة الغاز المنزلي' : 'استكشاف المخزون المتاح'}
               </h1>
               <p className="text-xs text-slate-500">
                 {activeCoords
                   ? 'مرتّب حسب الأقرب إلى موقعك مع حساب المسافة بالكيلومتر'
-                  : 'مرتّب حسب الأحدث — حدد عنواناً افتراضياً للترتيب حسب الأقرب'}
+                  : isConsumer
+                    ? 'مرتّب حسب الأحدث — حدد عنواناً افتراضياً للترتيب حسب الأقرب'
+                    : 'تصفّح مواقع التوزيع والمخزون المتاح'}
               </p>
             </div>
           </div>
@@ -140,8 +145,25 @@ export default function ConsumerStocksPage({ go, onSessionExpired }) {
           </div>
         ) : err ? (
           <div className="rounded-2xl border border-slate-200 bg-canvas p-6 space-y-4">
-            <ErrorBanner err={err} />
+            <ErrorBanner err={user ? err : new Error('تعذر عرض بيانات المخزون المباشرة للزوار حاليًا.')} />
             <SecondaryBtn onClick={reload}>إعادة المحاولة</SecondaryBtn>
+            {!user && (
+              <section className="mt-6 space-y-3" aria-labelledby="public-distribution-points">
+                <h2 id="public-distribution-points" className="mw-h2">نقاط التوزيع في تعز</h2>
+                <p className="text-sm text-slate-600">أمثلة من دليل المواقع. لا تعبّر عن توفر المخزون حاليًا.</p>
+                <ul className="grid gap-3 md:grid-cols-2">
+                  {DISTRICTS.flatMap(({ id, name, hubs }) => hubs
+                    .filter(({ resource }) => !isGas || resource === 'gas')
+                    .map((hub) => (
+                      <li key={`${id}-${hub.resource}`} className="rounded-xl border border-slate-200 p-3">
+                        <ResourceBadge type={hub.resource} />
+                        <h3 className="mt-2 font-bold">{hub.name}</h3>
+                        <p className="text-sm text-slate-600">{name} · {hub.area}</p>
+                      </li>
+                    )))}
+                </ul>
+              </section>
+            )}
           </div>
         ) : stocks.length === 0 ? (
           <div className="rounded-2xl border border-slate-200 bg-canvas p-10 text-center space-y-3">
@@ -166,7 +188,7 @@ export default function ConsumerStocksPage({ go, onSessionExpired }) {
               <ConsumerStockCard
                 key={stock.id}
                 stock={stock}
-                onSelect={(selected) => go(ROUTES.CONSUMER_STOCK_DETAILS, { stockId: selected.id })}
+                onSelect={(selected) => go(ROUTES.CONSUMER_STOCK_DETAILS, { stockId: selected.id, resource: service })}
               />
             ))}
           </div>

@@ -1,3 +1,4 @@
+import { getResourceTheme } from '../../../shared/constants/resources'
 // ═══════════ لوحة إدارة المخزون — الرصيد والأرصدة والإجراءات السريعة ═══════════
 import { ROUTES } from '../../../shared/constants/routes'
 import { Icons } from '../../../shared/components/ui'
@@ -47,6 +48,7 @@ export default function StockDashboardPage({ go, stockId }) {
     const mainUnit = stock?.units?.find((u) => u.is_main)
     const balances = Array.isArray(stock?.balances) ? stock.balances : []
     const unitsCount = Array.isArray(stock?.units) ? stock.units.length : 0
+    const StockIcon = getResourceTheme(stock?.type?.slug) === 'gas' ? Icons.Gas : Icons.Box
     const gazTypeLabel = formatGazStockType(stock?.stock_details?.gaz_stock_type)
     const hasCoords =
       stock?.location &&
@@ -61,7 +63,7 @@ export default function StockDashboardPage({ go, stockId }) {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
                 <div className="w-10 h-10 rounded-xl bg-canvas text-mawarid-700 flex items-center justify-center shrink-0">
-                  <Icons.Box className="w-5 h-5" aria-hidden="true" />
+                  <StockIcon className="w-5 h-5" aria-hidden="true" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
