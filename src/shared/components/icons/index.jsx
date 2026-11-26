@@ -17,16 +17,6 @@ export const Icons = {
     </svg>
   ),
 
-  LogoMark: ({ className = 'w-8 h-8' }) => (
-    <svg className={className} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="40" height="40" rx="10" className="fill-[var(--mw-logo)]" />
-      {/* قطرة ماء وشعلة متداخلة هندسياً ترمز للموارد الحيوية */}
-      <path d="M20 7C14 16 11 20 11 25C11 30 15 34 20 34C25 34 29 30 29 25C29 20 26 16 20 7Z" fill="#38BDF8" fillOpacity="0.3" />
-      <path d="M20 12C16 18 14 21.5 14 25C14 28.3 16.7 31 20 31C23.3 31 26 28.3 26 25C26 21.5 24 18 20 12Z" fill="#38BDF8" />
-      <path d="M20 18C18.5 22 17 24.5 17 27C17 28.7 18.3 30 20 30C21.7 30 23 28.7 23 27C23 24.5 21.5 22 20 18Z" fill="#F97316" />
-      <circle cx="20" cy="27" r="2" fill="#FEF08A" />
-    </svg>
-  ),
   Alert: ({ className = 'w-5 h-5' }) => (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />

@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { PHONE_RE } from '../../../shared/constants/regex'
-import { Icons, BrandLogo, ErrorBanner, Label, PhoneInput, TextInput, PrimaryBtn, BackBtn, ThemeToggle } from '../../../shared/components/ui'
+import { Icons, BrandLogo, Logo, ErrorBanner, Label, PhoneInput, TextInput, PrimaryBtn, BackBtn, ThemeToggle } from '../../../shared/components/ui'
 import TurnstileWidget from '../components/TurnstileWidget'
 
 export default function Login({ go }) {
@@ -49,15 +49,10 @@ export default function Login({ go }) {
 
       {/* بطاقة تسجيل الدخول الرئيسية */}
       <div className="max-w-md w-full mx-auto bg-canvas rounded-3xl border border-slate-200/80 mw-auth-card shadow-card fade-in">
-        <div className="text-center mb-6">
-          <div className="w-14 h-14 mx-auto rounded-2xl mw-logo flex items-center justify-center mb-3">
-            <Icons.LogoMark className="w-9 h-9" />
-          </div>
-          <h1 className="mw-h1 text-slate-900">تسجيل الدخول إلى موارد</h1>
-          <p className="text-xs sm:text-sm font-medium text-slate-500 mt-1">
-            أدخل رقم هاتفك وكلمة المرور للوصول إلى حسابك.
-          </p>
-        </div>
+        <Logo
+          title="تسجيل الدخول إلى موارد"
+          subtitle="أدخل رقم هاتفك وكلمة المرور للوصول إلى حسابك."
+        />
 
         <ErrorBanner err={err} />
 

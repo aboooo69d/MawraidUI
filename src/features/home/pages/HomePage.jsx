@@ -12,9 +12,9 @@ const NAV_LINKS = [
 ]
 
 const RESOURCES = [
-  { type: 'gas', name: 'الغاز المنزلي', description: 'استعرض مخزون أسطوانات الغاز وتفاصيل التعبئة أو الاستبدال.', icon: Icons.Gas },
-  { type: 'water', name: 'المياه', description: 'اطّلع على الكميات المتاحة ومواقع مخازن المياه.', icon: Icons.Water },
-  { type: 'fuel', name: 'الوقود', description: 'استعرض مخزون الوقود ووحدات البيع المتاحة لدى المزودين.', icon: Icons.Fuel },
+  { type: 'gas', name: 'الغاز', icon: Icons.Gas },
+  { type: 'water', name: 'المياه', icon: Icons.Water },
+  { type: 'fuel', name: 'الوقود', icon: Icons.Fuel },
 ]
 
 const DISTRICTS = [
@@ -63,6 +63,7 @@ const navClass = 'inline-flex items-center min-h-11 rounded-lg px-2.5 text-sm fo
 export default function HomePage({ go }) {
   const { user } = useAuth()
   const [districtId, setDistrictId] = useState(DISTRICTS[0].id)
+  const [selectedResource, setSelectedResource] = useState(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [regOpen, setRegOpen] = useState(false)
   const registerButton = useRef(null)
@@ -153,21 +154,25 @@ export default function HomePage({ go }) {
 
         <section id="resources" className={`${sectionWidth} pb-10 sm:pb-14`} aria-labelledby="resources-title">
           <h2 id="resources-title" className="mw-h2 mb-4">استكشف الموارد</h2>
-          <div className="grid gap-3 md:grid-cols-3 md:gap-4">
-            {RESOURCES.map(({ type, name, description, icon: Icon }) => (
-              <article key={type} data-resource={type} className="mw-service-card flex items-start gap-3 rounded-2xl border border-slate-200 bg-canvas p-4 sm:p-5 md:flex-col md:p-6">
-                <div className="mw-resource grid h-12 w-12 shrink-0 place-items-center rounded-xl">
+          <div className="mw-mini-resource-grid" role="group" aria-labelledby="resources-title">
+            {RESOURCES.map(({ type, name, icon: Icon }) => (
+              <button
+                key={type}
+                type="button"
+                data-resource={type}
+                aria-pressed={selectedResource === type}
+                onClick={() => setSelectedResource((current) => current === type ? null : type)}
+                className="mw-mini-resource"
+              >
+                <span className="mw-resource grid h-10 w-10 shrink-0 place-items-center rounded-xl">
                   <Icon className="w-6 h-6" aria-hidden="true" />
-                </div>
-                <div>
-                  <h3 className="mw-h3">{name}</h3>
-                  <p className="mt-1 text-sm text-slate-600">{description}</p>
-                </div>
-              </article>
+                </span>
+                <span>{name}</span>
+              </button>
             ))}
           </div>
           <div className="mt-5 flex flex-wrap items-center gap-2">
-            <button type="button" className="mw-button mw-button-primary" onClick={browseStocks}>
+            <button type="button" data-resource={selectedResource ?? undefined} className="mw-button mw-button-primary" onClick={browseStocks}>
               {canBrowse ? 'استكشاف المخزون المتاح' : user ? 'الانتقال إلى لوحة التحكم' : 'تسجيل الدخول لاستكشاف المخزون'}
             </button>
             {!user && <button type="button" className="mw-button mw-button-secondary" onClick={() => go(ROUTES.REGISTER_CONSUMER)}>تسجيل مستفيد</button>}
