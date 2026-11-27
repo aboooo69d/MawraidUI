@@ -11,6 +11,18 @@ export function useConsumerStockDetails(stockId, { isConsumer = true } = {}) {
 
   const seqRef = useRef(0)
 
+  useEffect(() => {
+    let active = true
+    setDefaultAddress(null)
+    if (isConsumer) {
+      addressesApi.getMyDefaultCached().then(
+        (address) => { if (active) setDefaultAddress(address) },
+        () => {},
+      )
+    }
+    return () => { active = false }
+  }, [isConsumer])
+
   const load = useCallback(async () => {
     if (!stockId) {
       setStock(null)
@@ -24,14 +36,9 @@ export function useConsumerStockDetails(stockId, { isConsumer = true } = {}) {
     setErr(null)
 
     try {
-      const [stockData, cachedDefault] = await Promise.all([
-        stockApi.getConsumerStockById(stockId),
-        isConsumer ? addressesApi.getMyDefaultCached().catch(() => null) : Promise.resolve(null),
-      ])
-
+      const stockData = await stockApi.getConsumerStockById(stockId)
       if (seq !== seqRef.current) return
       setStock(stockData)
-      setDefaultAddress(cachedDefault)
     } catch (e) {
       if (seq !== seqRef.current) return
       setStock(null)
@@ -39,7 +46,7 @@ export function useConsumerStockDetails(stockId, { isConsumer = true } = {}) {
     } finally {
       if (seq === seqRef.current) setLoading(false)
     }
-  }, [stockId, isConsumer])
+  }, [stockId])
 
   useEffect(() => {
     load()

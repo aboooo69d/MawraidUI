@@ -1,6 +1,8 @@
 // ═══════════ نافذة سفلية (Bottom Sheet) لإنشاء طلب جديد من المخزون ═══════════
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useModalFocus } from '../../../shared/hooks/useModalFocus'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import OrderSheet from './OrderSheet'
+import { Skeleton } from '../../../shared/components/ui/Skeleton'
+import { getResourceTheme } from '../../../shared/constants/resources'
 import { useAuth } from '../../auth/hooks/useAuth'
 import { addressesApi, ordersApi } from '../../../services/api'
 import { ErrorBanner, Icons, Label, PrimaryBtn, SecondaryBtn } from '../../../shared/components/ui'
@@ -31,7 +33,9 @@ export default function CreateOrderSheet({
   onSessionExpired,
 }) {
   const { user } = useAuth()
-  const dialogRef = useModalFocus(open && Boolean(stock))
+  const submission = useRef(false)
+  const initializedStock = useRef(null)
+  const addressRequest = useRef(0)
 
   const units = useMemo(() => (Array.isArray(stock?.units) ? stock.units : []), [stock])
   const mainUnit = useMemo(() => units.find((u) => u.is_main) || units[0] || null, [units])
@@ -52,9 +56,11 @@ export default function CreateOrderSheet({
   const [err, setErr] = useState(null)
 
   const loadAddresses = useCallback(async () => {
+    const sequence = ++addressRequest.current
     setAddressesState((prev) => ({ ...prev, loading: true, err: null }))
     try {
       const list = await addressesApi.listMine()
+      if (sequence !== addressRequest.current) return
       setAddressesState({ loading: false, list, err: null })
       setAddressId((prevId) => {
         if (prevId && list.some((a) => a.id === prevId)) return prevId
@@ -65,6 +71,7 @@ export default function CreateOrderSheet({
         return preferred?.id || ''
       })
     } catch (e) {
+      if (sequence !== addressRequest.current) return
       if (isSessionExpiredError(e)) {
         onSessionExpired?.()
         return
@@ -73,9 +80,16 @@ export default function CreateOrderSheet({
     }
   }, [defaultAddress?.id, onSessionExpired])
 
+  useEffect(() => () => { addressRequest.current++ }, [open, stock?.id])
+
   // تهيئة الحقول عند فتح النافذة السفلية
   useEffect(() => {
-    if (!open || !stock) return
+    if (!open || !stock) {
+      initializedStock.current = null
+      return
+    }
+    if (initializedStock.current === stock.id) return
+    initializedStock.current = stock.id
 
     const preferredUnit =
       units.find((u) => Number(u.id) === Number(initialUnitId) && getUnitAvailableAmount(stock, u) > 0) ||
@@ -88,29 +102,11 @@ export default function CreateOrderSheet({
     setConsumerType(enabledTypes[0] || 'home')
     setNotes('')
     setErr(null)
+    setAddressId('')
     loadAddresses()
   }, [open, stock, initialUnitId, units, mainUnit, enabledTypes, loadAddresses])
 
-  // قفل التمرير الخلفي ودعم زر Escape
-  useEffect(() => {
-    if (!open) return undefined
-    const prevOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-
-    function handleKeyDown(e) {
-      if (e.key === 'Escape' && !submitting) {
-        onClose?.()
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.body.style.overflow = prevOverflow
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [open, submitting, onClose])
-
-  if (!open || !stock) return null
-
+  const selectedAddress = addressesState.list.find((address) => address.id === addressId)
   const selectedUnit = units.find((u) => Number(u.id) === Number(unitId)) || null
   const maxAvailable = selectedUnit ? getUnitAvailableAmount(stock, selectedUnit) : 0
   const numericQty = Math.max(0, Math.floor(Number(quantity) || 0))
@@ -158,7 +154,8 @@ export default function CreateOrderSheet({
   }
 
   async function handleSubmit(e) {
-    if (e) e.preventDefault()
+    e?.preventDefault()
+    if (!open || !stock || submission.current || addressesState.loading) return
     setErr(null)
 
     const validationErr = validateCreateOrder({
@@ -187,6 +184,7 @@ export default function CreateOrderSheet({
       payload.notes = trimmedNotes
     }
 
+    submission.current = true
     setSubmitting(true)
     try {
       const createdOrder = await ordersApi.createOrder(payload)
@@ -198,29 +196,21 @@ export default function CreateOrderSheet({
       }
       setErr(e2)
     } finally {
+      submission.current = false
       setSubmitting(false)
     }
   }
 
   return (
-    <div
-      dir="rtl"
-      className="fixed inset-0 z-[1200] flex items-end justify-center sm:items-end"
-      ref={dialogRef}
-      tabIndex={-1}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="create-order-sheet-title"
+    <OrderSheet
+      open={open && Boolean(stock)}
+      busy={submitting}
+      onClose={onClose}
+      titleId="create-order-sheet-title"
+      resource={getResourceTheme(stock?.type?.slug)}
+      wide
     >
-      {/* خلفية معتمة */}
-      <div
-        className="fixed inset-0 bg-scrim/55 transition-opacity"
-        onClick={() => !submitting && onClose?.()}
-        aria-hidden="true"
-      />
-
-      {/* حاوية النافذة السفلية */}
-      <div className="sheet-up relative z-10 w-full max-w-2xl bg-canvas rounded-t-3xl border-t border-x border-slate-200 shadow-2xl max-h-[92dvh] flex flex-col overflow-hidden text-right">
+      {stock && <>
         {/* مقبض علوي وشريط العنوان */}
         <div className="px-5 sm:px-6 pt-3 pb-4 border-b border-slate-100 shrink-0">
           <div className="w-12 h-1.5 rounded-full bg-slate-200 mx-auto mb-3" aria-hidden="true" />
@@ -251,306 +241,325 @@ export default function CreateOrderSheet({
         </div>
 
         {/* نموذج بيانات الطلب القابل للتمرير */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-5 sm:px-6 py-4 space-y-5">
-          <ErrorBanner err={err} />
+        <form id="create-order-form" onSubmit={handleSubmit} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 sm:px-6 py-3 space-y-4">
+          <fieldset disabled={submitting} className="min-w-0 space-y-4">
 
-          {/* 1) اختيار الوحدة */}
-          <div>
-            <Label req>اختر الوحدة المطلوبة</Label>
-            {units.length === 0 ? (
-              <p className="text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-xl p-3">
-                لا توجد وحدات متاحة في هذا المخزون حالياً.
-              </p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {units.map((u) => {
-                  const unitAvail = getUnitAvailableAmount(stock, u)
-                  const isSelected = Number(unitId) === Number(u.id)
-                  const outOfStock = unitAvail <= 0
+            {/* 1) اختيار الوحدة */}
+            <div>
+              <Label req>اختر الوحدة المطلوبة</Label>
+              {units.length === 0 ? (
+                <p className="text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-xl p-3">
+                  لا توجد وحدات متاحة في هذا المخزون حالياً.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {units.map((u) => {
+                    const unitAvail = getUnitAvailableAmount(stock, u)
+                    const isSelected = Number(unitId) === Number(u.id)
+                    const outOfStock = unitAvail <= 0
 
-                  return (
-                    <button
-                      key={u.id}
-                      type="button"
-                      disabled={outOfStock}
-                      onClick={() => handleSelectUnit(u)}
-                      className={`rounded-2xl border p-3.5 text-right transition flex flex-col justify-between gap-2 ${
-                        outOfStock
-                          ? 'border-slate-200 bg-slate-50 opacity-55 cursor-not-allowed'
-                          : isSelected
-                          ? 'border-mawarid-600 bg-mawarid-50/60 ring-2 ring-mawarid-600/20 cursor-pointer'
-                          : 'border-slate-200 bg-canvas hover:border-mawarid-300 hover:bg-slate-50/50 cursor-pointer'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2 w-full">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="font-black text-sm text-slate-900 truncate">{u.name}</span>
-                          {u.is_main && (
-                            <span className="px-2 py-0.5 rounded-full bg-mawarid-100 text-mawarid-800 text-[10px] font-bold shrink-0">
-                              رئيسية
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-sm font-black text-mawarid-800 shrink-0">
-                          <span className="font-mono" dir="ltr">{formatOrderPrice(u.price)}</span>{' '}
-                          <span className="text-[11px] font-bold text-slate-500">ريال</span>
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1.5 border-t border-slate-200/60 w-full">
-                        <span>
-                          المتوفر:{' '}
-                          <strong className={`font-mono ${outOfStock ? 'text-rose-600' : 'text-slate-800'}`} dir="ltr">
-                            {formatOrderAmount(unitAvail)}
-                          </strong>
-                        </span>
-                        {!u.is_main && mainUnit && (
-                          <span>
-                            يعادل <strong className="font-mono" dir="ltr">{formatOrderAmount(u.rate)}</strong> {mainUnit.name}
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* 2) تحديد الكمية */}
-          <div>
-            <div className="flex items-center justify-between">
-              <Label req htmlFor="order-qty-input">الكمية المطلوبة</Label>
-              {selectedUnit && (
-                <span className="text-[11px] font-bold text-slate-500">
-                  الحد الأقصى المتاح: <span className="font-mono text-slate-800" dir="ltr">{formatOrderAmount(maxAvailable)}</span> {selectedUnit.name}
-                </span>
-              )}
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => stepQuantity(-1)}
-                disabled={numericQty <= 1 || submitting}
-                aria-label="إنقاص الكمية"
-                className="w-12 h-12 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 flex items-center justify-center transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-              >
-                <Icons.Minus className="w-4 h-4" />
-              </button>
-
-              <input
-                id="order-qty-input"
-                type="text"
-                inputMode="numeric"
-                dir="ltr"
-                value={quantity}
-                onChange={(e) => handleQuantityInput(e.target.value)}
-                className="flex-1 min-h-[48px] rounded-xl border border-slate-200 bg-canvas px-4 text-center font-mono text-lg font-black text-slate-900 outline-none focus:border-mawarid-600 focus:ring-2 focus:ring-mawarid-600/20"
-              />
-
-              <button
-                type="button"
-                onClick={() => stepQuantity(1)}
-                disabled={(maxAvailable > 0 && numericQty >= maxAvailable) || submitting}
-                aria-label="زيادة الكمية"
-                className="w-12 h-12 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 flex items-center justify-center transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-              >
-                <Icons.Plus className="w-4 h-4" />
-              </button>
-            </div>
-
-            {selectedUnit && !selectedUnit.is_main && mainUnit && numericQty > 0 && (
-              <p className="text-[11px] text-slate-500 mt-1.5">
-                سيتم حجز <strong className="font-mono text-slate-800" dir="ltr">{formatOrderAmount(reservedBaseUnits)}</strong> {mainUnit.name} من رصيد المخزون.
-              </p>
-            )}
-          </div>
-
-          {/* 3) صفة المستفيد */}
-          <div>
-            <Label req>صفة المستفيد للطلب</Label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-              {CONSUMER_TYPE_OPTIONS.map((opt) => {
-                const Icon = CONSUMER_TYPE_ICONS[opt.value] || Icons.User
-                const isSelected = consumerType === opt.value
-                const isEnabled = enabledTypes.includes(opt.value)
-
-                return (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    disabled={!isEnabled}
-                    onClick={() => {
-                      setConsumerType(opt.value)
-                      setErr(null)
-                    }}
-                    className={`rounded-2xl border p-3 text-right transition flex items-center gap-2.5 ${
-                      !isEnabled
-                        ? 'border-slate-200 bg-slate-50 opacity-50 cursor-not-allowed'
-                        : isSelected
-                        ? 'border-mawarid-600 bg-mawarid-50/60 ring-2 ring-mawarid-600/20 cursor-pointer'
-                        : 'border-slate-200 bg-canvas hover:border-mawarid-300 cursor-pointer'
-                    }`}
-                  >
-                    <div
-                      className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                        isSelected ? 'bg-mawarid-700 text-on-accent' : 'bg-slate-100 text-slate-600'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-xs font-black text-slate-900 truncate">{opt.label}</div>
-                      <div className="text-[10px] text-slate-500 truncate">{opt.description}</div>
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* 4) عنوان التوصيل المحفوظ */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-[13px] font-bold text-slate-700">
-                عنوان الاستلام / التوصيل <span className="text-rose-500 font-bold">*</span>
-              </label>
-              {onManageAddresses && (
-                <button
-                  type="button"
-                  onClick={onManageAddresses}
-                  className="text-xs font-bold text-mawarid-700 hover:underline cursor-pointer"
-                >
-                  إدارة العناوين
-                </button>
-              )}
-            </div>
-
-            {addressesState.loading ? (
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 flex items-center gap-2.5 text-xs font-bold text-slate-600">
-                <Icons.Refresh className="w-4 h-4 animate-spin text-mawarid-700" />
-                <span>جارٍ تحميل عناوينك المحفوظة…</span>
-              </div>
-            ) : addressesState.err ? (
-              <div className="rounded-xl border border-rose-200 bg-rose-50/70 p-3.5 space-y-2">
-                <ErrorBanner err={addressesState.err} />
-                <SecondaryBtn onClick={loadAddresses} className="w-full text-xs">
-                  إعادة تحميل العناوين
-                </SecondaryBtn>
-              </div>
-            ) : addressesState.list.length === 0 ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 space-y-3">
-                <div className="flex items-start gap-2.5 text-xs text-amber-900">
-                  <Icons.MapPin className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                  <p className="font-bold leading-relaxed">
-                    لا يوجد لديك عنوان محفوظ حتى الآن. يجب إضافة عنوان واحد على الأقل لإتمام الطلب.
-                  </p>
-                </div>
-                {onManageAddresses && (
-                  <SecondaryBtn onClick={onManageAddresses} className="w-full text-xs">
-                    إضافة عنوان جديد الآن
-                  </SecondaryBtn>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-2 max-h-48 overflow-y-auto pl-1">
-                {addressesState.list.map((addr) => {
-                  const isSelected = addressId === addr.id
-                  return (
-                    <button
-                      key={addr.id}
-                      type="button"
-                      onClick={() => {
-                        setAddressId(addr.id)
-                        setErr(null)
-                      }}
-                      className={`w-full rounded-xl border p-3 text-right transition flex items-start justify-between gap-3 cursor-pointer ${
-                        isSelected
-                          ? 'border-mawarid-600 bg-mawarid-50/60 ring-2 ring-mawarid-600/20'
-                          : 'border-slate-200 bg-canvas hover:border-mawarid-300'
-                      }`}
-                    >
-                      <div className="flex items-start gap-2.5 min-w-0">
-                        <Icons.MapPin
-                          className={`w-4 h-4 shrink-0 mt-0.5 ${
-                            isSelected ? 'text-mawarid-700' : 'text-slate-400'
-                          }`}
-                        />
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-black text-slate-900 truncate">
-                              {addr.title || 'عنوان محفوظ'}
-                            </span>
-                            {addr.is_default && (
-                              <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold shrink-0">
-                                افتراضي
+                    return (
+                      <button
+                        key={u.id}
+                        type="button"
+                        disabled={outOfStock}
+                        aria-pressed={isSelected}
+                        onClick={() => handleSelectUnit(u)}
+                        className={`rounded-2xl border p-3.5 text-right transition flex flex-col justify-between gap-2 ${
+                          outOfStock
+                            ? 'border-slate-200 bg-slate-50 opacity-55 cursor-not-allowed'
+                            : isSelected
+                            ? 'border-mawarid-600 bg-mawarid-50/60 ring-2 ring-mawarid-600/20 cursor-pointer'
+                            : 'border-slate-200 bg-canvas hover:border-mawarid-300 hover:bg-slate-50/50 cursor-pointer'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2 w-full">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="font-black text-sm text-slate-900 truncate">{u.name}</span>
+                            {u.is_main && (
+                              <span className="px-2 py-0.5 rounded-full bg-mawarid-100 text-mawarid-800 text-[10px] font-bold shrink-0">
+                                رئيسية
                               </span>
                             )}
                           </div>
-                          {addr.description && (
-                            <p className="text-[11px] text-slate-500 truncate mt-0.5">{addr.description}</p>
+                          <span className="text-sm font-black text-mawarid-800 shrink-0">
+                            <span className="font-mono" dir="ltr">{formatOrderPrice(u.price)}</span>{' '}
+                            <span className="text-[11px] font-bold text-slate-500">ريال</span>
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1.5 border-t border-slate-200/60 w-full">
+                          <span>
+                            المتوفر:{' '}
+                            <strong className={`font-mono ${outOfStock ? 'text-rose-600' : 'text-slate-800'}`} dir="ltr">
+                              {formatOrderAmount(unitAvail)}
+                            </strong>
+                          </span>
+                          {!u.is_main && mainUnit && (
+                            <span>
+                              يعادل <strong className="font-mono" dir="ltr">{formatOrderAmount(u.rate)}</strong> {mainUnit.name}
+                            </span>
                           )}
                         </div>
-                      </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
 
+            {/* 2) تحديد الكمية */}
+            <div>
+              <div className="flex items-center justify-between">
+                <Label req htmlFor="order-qty-input">الكمية المطلوبة</Label>
+                {selectedUnit && (
+                  <span className="text-[11px] font-bold text-slate-500">
+                    الحد الأقصى المتاح: <span className="font-mono text-slate-800" dir="ltr">{formatOrderAmount(maxAvailable)}</span> {selectedUnit.name}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => stepQuantity(-1)}
+                  disabled={numericQty <= 1 || submitting}
+                  aria-label="إنقاص الكمية"
+                  className="w-12 h-12 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 flex items-center justify-center transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                >
+                  <Icons.Minus className="w-4 h-4" />
+                </button>
+
+                <input
+                  id="order-qty-input"
+                  type="text"
+                  inputMode="numeric"
+                  dir="ltr"
+                  value={quantity}
+                  onChange={(e) => handleQuantityInput(e.target.value)}
+                  className="min-w-0 flex-1 min-h-[48px] rounded-xl border border-slate-200 bg-canvas px-4 text-center font-mono text-lg font-black text-slate-900 outline-none focus:border-mawarid-600 focus:ring-2 focus:ring-mawarid-600/20"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => stepQuantity(1)}
+                  disabled={(maxAvailable > 0 && numericQty >= maxAvailable) || submitting}
+                  aria-label="زيادة الكمية"
+                  className="w-12 h-12 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 flex items-center justify-center transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                >
+                  <Icons.Plus className="w-4 h-4" />
+                </button>
+              </div>
+
+              {selectedUnit && !selectedUnit.is_main && mainUnit && numericQty > 0 && (
+                <p className="text-[11px] text-slate-500 mt-1.5">
+                  سيتم حجز <strong className="font-mono text-slate-800" dir="ltr">{formatOrderAmount(reservedBaseUnits)}</strong> {mainUnit.name} من رصيد المخزون.
+                </p>
+              )}
+            </div>
+
+            {/* 3) صفة المستفيد */}
+            <div>
+              <Label req>صفة المستفيد للطلب</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                {CONSUMER_TYPE_OPTIONS.map((opt) => {
+                  const Icon = CONSUMER_TYPE_ICONS[opt.value] || Icons.User
+                  const isSelected = consumerType === opt.value
+                  const isEnabled = enabledTypes.includes(opt.value)
+
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      disabled={!isEnabled}
+                      aria-pressed={isSelected}
+                      onClick={() => {
+                        setConsumerType(opt.value)
+                        setErr(null)
+                      }}
+                      className={`rounded-2xl border p-3 text-right transition flex items-center gap-2.5 ${
+                        !isEnabled
+                          ? 'border-slate-200 bg-slate-50 opacity-50 cursor-not-allowed'
+                          : isSelected
+                          ? 'border-mawarid-600 bg-mawarid-50/60 ring-2 ring-mawarid-600/20 cursor-pointer'
+                          : 'border-slate-200 bg-canvas hover:border-mawarid-300 cursor-pointer'
+                      }`}
+                    >
                       <div
-                        className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${
-                          isSelected
-                            ? 'bg-mawarid-700 border-mawarid-700 text-on-accent'
-                            : 'border-slate-300 bg-canvas'
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                          isSelected ? 'bg-mawarid-700 text-on-accent' : 'bg-slate-100 text-slate-600'
                         }`}
                       >
-                        {isSelected && <Icons.Check className="w-3 h-3" />}
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-black text-slate-900 truncate">{opt.label}</div>
+                        <div className="text-[10px] text-slate-500 truncate">{opt.description}</div>
                       </div>
                     </button>
                   )
                 })}
               </div>
-            )}
-          </div>
-
-          {/* 5) ملاحظات إضافية (اختياري) */}
-          <div>
-            <div className="flex items-center justify-between">
-              <Label htmlFor="order-notes">ملاحظات للمزود (اختياري)</Label>
-              <span className="text-[11px] font-mono text-slate-400" dir="ltr">
-                {notes.length}/500
-              </span>
             </div>
-            <textarea
-              id="order-notes"
-              rows={2}
-              maxLength={500}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="مثال: يرجى الاتصال عند الوصول أو تحديد معلم قريب..."
-              className="w-full rounded-xl border border-slate-200 bg-canvas p-3 text-xs text-slate-800 outline-none transition focus:border-mawarid-600 focus:ring-2 focus:ring-mawarid-600/20"
-            />
-          </div>
+
+            {/* 4) عنوان التوصيل المحفوظ */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-[13px] font-bold text-slate-700">
+                  عنوان الاستلام / التوصيل <span className="text-rose-500 font-bold">*</span>
+                </label>
+                {onManageAddresses && (
+                  <button
+                    type="button"
+                    onClick={onManageAddresses}
+                    className="text-xs font-bold text-mawarid-700 hover:underline cursor-pointer"
+                  >
+                    إدارة العناوين
+                  </button>
+                )}
+              </div>
+
+              {addressesState.loading ? (
+                <div role="status" className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
+                  <span className="sr-only">جارٍ تحميل عناوينك المحفوظة…</span>
+                  <Skeleton className="h-4 w-1/3" />
+                  <Skeleton className="h-3 w-2/3" />
+                </div>
+              ) : addressesState.err ? (
+                <div className="rounded-xl border border-rose-200 bg-rose-50/70 p-3.5 space-y-2">
+                  <ErrorBanner err={addressesState.err} />
+                  <SecondaryBtn onClick={loadAddresses} className="w-full text-xs">
+                    إعادة تحميل العناوين
+                  </SecondaryBtn>
+                </div>
+              ) : addressesState.list.length === 0 ? (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 space-y-3">
+                  <div className="flex items-start gap-2.5 text-xs text-amber-900">
+                    <Icons.MapPin className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <p className="font-bold leading-relaxed">
+                      لا يوجد لديك عنوان محفوظ حتى الآن. يجب إضافة عنوان واحد على الأقل لإتمام الطلب.
+                    </p>
+                  </div>
+                  {onManageAddresses && (
+                    <SecondaryBtn onClick={onManageAddresses} className="w-full text-xs">
+                      إضافة عنوان جديد الآن
+                    </SecondaryBtn>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-48 overflow-y-auto pl-1">
+                  {addressesState.list.map((addr) => {
+                    const isSelected = addressId === addr.id
+                    return (
+                      <button
+                        key={addr.id}
+                        type="button"
+                        aria-pressed={isSelected}
+                        onClick={() => {
+                          setAddressId(addr.id)
+                          setErr(null)
+                        }}
+                        className={`w-full rounded-xl border p-3 text-right transition flex items-start justify-between gap-3 cursor-pointer ${
+                          isSelected
+                            ? 'border-mawarid-600 bg-mawarid-50/60 ring-2 ring-mawarid-600/20'
+                            : 'border-slate-200 bg-canvas hover:border-mawarid-300'
+                        }`}
+                      >
+                        <div className="flex items-start gap-2.5 min-w-0">
+                          <Icons.MapPin
+                            className={`w-4 h-4 shrink-0 mt-0.5 ${
+                              isSelected ? 'text-mawarid-700' : 'text-slate-400'
+                            }`}
+                          />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-black text-slate-900 truncate">
+                                {addr.title || 'عنوان محفوظ'}
+                              </span>
+                              {addr.is_default && (
+                                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold shrink-0">
+                                  افتراضي
+                                </span>
+                              )}
+                            </div>
+                            {addr.description && (
+                              <p className="text-[11px] text-slate-500 truncate mt-0.5">{addr.description}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div
+                          className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${
+                            isSelected
+                              ? 'bg-mawarid-700 border-mawarid-700 text-on-accent'
+                              : 'border-slate-300 bg-canvas'
+                          }`}
+                        >
+                          {isSelected && <Icons.Check className="w-3 h-3" />}
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* 5) ملاحظات إضافية (اختياري) */}
+            <div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="order-notes">ملاحظات للمزود (اختياري)</Label>
+                <span className="text-[11px] font-mono text-slate-400" dir="ltr">
+                  {notes.length}/500
+                </span>
+              </div>
+              <textarea
+                id="order-notes"
+                rows={2}
+                maxLength={500}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="مثال: يرجى الاتصال عند الوصول أو تحديد معلم قريب..."
+                className="w-full rounded-xl border border-slate-200 bg-canvas p-3 text-xs text-slate-800 outline-none transition focus:border-mawarid-600 focus:ring-2 focus:ring-mawarid-600/20"
+              />
+            </div>
+          </fieldset>
         </form>
 
         {/* شريط الملخص المالي وزر التأكيد السفلي */}
         <div className="px-5 sm:px-6 py-4 bg-slate-50 border-t border-slate-200 shrink-0 space-y-3">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
               <div className="text-xs font-bold text-slate-500">الإجمالي المستحق</div>
+              {selectedUnit && (
+                <p className="text-xs text-slate-600">
+                  <bdi>{formatOrderAmount(numericQty)}</bdi> {selectedUnit.name} × <bdi>{formatOrderPrice(selectedUnit.price)}</bdi> ريال
+                </p>
+              )}
               <div className="text-xl font-black text-mawarid-900">
                 <span className="font-mono" dir="ltr">{formatOrderPrice(estimatedTotal)}</span>{' '}
                 <span className="text-xs font-bold text-slate-600">ريال</span>
               </div>
             </div>
 
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-canvas border border-slate-200 text-xs font-bold text-slate-700">
-              <Icons.Check className="w-3.5 h-3.5 text-emerald-600" />
-              <span>الدفع نقداً عند الاستلام</span>
-            </span>
+            <div className="min-w-0 space-y-1 text-xs font-bold text-slate-700">
+              <span className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-canvas px-2.5 py-1">
+                <Icons.Check className="w-3.5 h-3.5 shrink-0 text-emerald-600" aria-hidden="true" />
+                الدفع نقداً عند الاستلام
+              </span>
+              {selectedAddress && (
+                <p className="flex items-center gap-1.5">
+                  <Icons.MapPin className="w-3.5 h-3.5 shrink-0 text-mawarid-700" aria-hidden="true" />
+                  <span className="break-words">العنوان: {selectedAddress.title || 'عنوان محفوظ'}</span>
+                </p>
+              )}
+            </div>
           </div>
 
+          <ErrorBanner err={err} />
           <div className="flex items-center gap-2.5">
             <PrimaryBtn
-              type="button"
-              onClick={handleSubmit}
+              type="submit"
+              form="create-order-form"
               loading={submitting}
               disabled={
                 submitting ||
@@ -577,7 +586,7 @@ export default function CreateOrderSheet({
             </SecondaryBtn>
           </div>
         </div>
-      </div>
-    </div>
+      </>}
+    </OrderSheet>
   )
 }

@@ -1,7 +1,7 @@
 // ═══════════ شاشة تفاصيل المخزون للمستفيد مع الموقع على الخريطة وزر إنشاء الطلب ═══════════
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useAuth } from '../../auth/hooks/useAuth'
-import { BackBtn, ErrorBanner, Icons, PrimaryBtn, SecondaryBtn, ThemeToggle } from '../../../shared/components/ui'
+import { BackBtn, Icons, PrimaryBtn, SecondaryBtn, ThemeToggle } from '../../../shared/components/ui'
 import LocationPicker from '../../../shared/components/ui/LocationPicker'
 import { getResourceTheme } from '../../../shared/constants/resources'
 import { ROUTES } from '../../../shared/constants/routes'
@@ -9,6 +9,8 @@ import { useConsumerStockDetails } from '../hooks/useConsumerStockDetails'
 import { formatAmount, formatDateTime, formatGazStockType, formatPrice } from '../utils/format'
 import { isValidCoords } from '../utils/geo'
 import { StockTypeIcon } from '../components/ConsumerStockCard'
+import { StockDetailsSkeleton } from '../components/StockDiscoverySkeleton'
+import StockReadError from '../components/StockReadError'
 import CreateOrderSheet from '../../orders/components/CreateOrderSheet'
 
 export default function ConsumerStockDetailsPage({
@@ -18,6 +20,7 @@ export default function ConsumerStockDetailsPage({
   resumeOrder,
   unitId,
   onOrderSignIn,
+  onStockSignIn,
   showToast,
   onSessionExpired,
   onCreateOrder,
@@ -26,6 +29,7 @@ export default function ConsumerStockDetailsPage({
   const isConsumer = user?.role_name === 'consumer'
   const [orderSheet, setOrderSheet] = useState({ open: Boolean(resumeOrder), unitId: unitId ?? null })
   const [createdOrder, setCreatedOrder] = useState(null)
+  const closeOrderSheet = useCallback(() => setOrderSheet({ open: false, unitId: null }), [])
 
   const {
     stock,
@@ -41,6 +45,7 @@ export default function ConsumerStockDetailsPage({
   const StockIcon = stockResource === 'gas' ? Icons.Gas : Icons.Box
   const isAvailable = Number(stock?.available) > 0
   const canStartOrder = !user || isConsumer
+  const orderLabel = user ? 'إنشاء طلب جديد' : 'تسجيل الدخول للطلب'
   const units = Array.isArray(stock?.units) ? stock.units : []
   const balances = Array.isArray(stock?.balances) ? stock.balances : []
   const mainUnit = units.find((u) => u.is_main) || units[0]
@@ -67,7 +72,7 @@ export default function ConsumerStockDetailsPage({
   }
 
   function handleOrderCreated(order) {
-    setOrderSheet({ open: false, unitId: null })
+    closeOrderSheet()
     setCreatedOrder(order)
     showToast?.(`تم إنشاء الطلب بنجاح (${order.order_number})`, true)
     reload()
@@ -77,7 +82,7 @@ export default function ConsumerStockDetailsPage({
     <div dir="rtl" data-resource={stockResource} className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans">
       {/* ── الترويسة ── */}
       <header className="bg-canvas border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:justify-between">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-2 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:justify-between">
           <div className="contents sm:flex sm:items-center sm:gap-2 sm:min-w-0">
             <BackBtn onClick={backToStockList} label="قائمة المخزون" />
             <div className="col-span-2 row-start-2 min-w-0">
@@ -107,70 +112,68 @@ export default function ConsumerStockDetailsPage({
       </header>
 
       {/* ── المحتوى ── */}
-      <main className="max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 flex-1 space-y-5 text-right">
-        {loading ? (
-          <div className="rounded-2xl border border-slate-200 bg-canvas p-10 text-center space-y-3">
-            <div className="w-8 h-8 mx-auto border-3 border-mawarid-200 border-t-mawarid-700 rounded-full animate-spin" />
-            <p className="text-sm font-bold text-slate-600">جارٍ تحميل تفاصيل المخزون…</p>
-          </div>
-        ) : err ? (
-          <div className="rounded-2xl border border-slate-200 bg-canvas p-6 space-y-4">
-            <ErrorBanner err={user ? err : new Error('تعذر عرض تفاصيل هذا المخزون للزوار حاليًا.')} />
-            <div className="flex flex-wrap gap-2">
-              <SecondaryBtn onClick={reload}>إعادة المحاولة</SecondaryBtn>
-              <SecondaryBtn onClick={backToStockList}>العودة لقائمة المخزون</SecondaryBtn>
+      <main className="max-w-5xl w-full mx-auto px-4 sm:px-6 py-4 flex-1 space-y-4 text-right">
+        {/* شريط تأكيد الطلب المنشأ حديثاً */}
+        {createdOrder && (
+          <section className="rounded-2xl border border-emerald-200 bg-emerald-50/90 p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 mw-success-in">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-solid text-white flex items-center justify-center shrink-0">
+                <Icons.Check className="w-5 h-5" />
+              </div>
+              <div role="status" className="space-y-0.5">
+                <h2 className="text-sm font-black text-emerald-950">
+                  تم حجز طلبك بنجاح — <span className="font-mono" dir="ltr">{createdOrder.order_number}</span>
+                </h2>
+                <p className="text-xs text-emerald-800">
+                  الكمية: <strong className="font-mono" dir="ltr">{formatAmount(createdOrder.quantity)}</strong> {createdOrder.unit_name} • الإجمالي:{' '}
+                  <strong className="font-mono" dir="ltr">{formatPrice(createdOrder.total_price)}</strong> ريال
+                </p>
+              </div>
             </div>
-          </div>
+
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() =>
+                  go(ROUTES.CONSUMER_ORDER_DETAILS, {
+                    orderId: createdOrder.id,
+                    backTo: ROUTES.CONSUMER_STOCK_DETAILS,
+                    backParams: { stockId, resource },
+                  })
+                }
+                className="px-3.5 py-2 rounded-xl bg-emerald-solid hover:bg-emerald-solid/90 text-white text-xs font-bold transition cursor-pointer"
+              >
+                عرض تفاصيل الطلب
+              </button>
+              <button
+                type="button"
+                onClick={() => go(ROUTES.CONSUMER_ORDERS)}
+                className="px-3 py-2 rounded-xl border border-emerald-300 bg-canvas hover:bg-emerald-50 text-emerald-800 text-xs font-bold transition cursor-pointer"
+              >
+                كل طلباتي
+              </button>
+            </div>
+          </section>
+        )}
+
+        {loading && !stock ? (
+          <StockDetailsSkeleton />
+        ) : err ? (
+          <StockReadError
+            err={err}
+            user={user}
+            onRetry={reload}
+            onSignIn={() => onStockSignIn?.(ROUTES.CONSUMER_STOCK_DETAILS, { stockId, resource })}
+          >
+            <SecondaryBtn onClick={backToStockList}>العودة لقائمة المخزون</SecondaryBtn>
+          </StockReadError>
         ) : !stock ? (
-          <div className="rounded-2xl border border-slate-200 bg-canvas p-10 text-center space-y-3">
+          <div className="min-h-44 rounded-2xl border border-slate-200 bg-canvas p-5 text-center space-y-3">
             <p className="text-sm font-bold text-slate-600">لم يتم العثور على بيانات هذا المخزون.</p>
             <SecondaryBtn onClick={backToStockList}>العودة لقائمة المخزون</SecondaryBtn>
           </div>
         ) : (
           <>
-            {/* شريط تأكيد الطلب المنشأ حديثاً */}
-            {createdOrder && (
-              <section className="rounded-2xl border border-emerald-200 bg-emerald-50/90 p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 fade-in">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-solid text-white flex items-center justify-center shrink-0">
-                    <Icons.Check className="w-5 h-5" />
-                  </div>
-                  <div className="space-y-0.5">
-                    <h2 className="text-sm font-black text-emerald-950">
-                      تم حجز طلبك بنجاح — <span className="font-mono" dir="ltr">{createdOrder.order_number}</span>
-                    </h2>
-                    <p className="text-xs text-emerald-800">
-                      الكمية: <strong className="font-mono" dir="ltr">{formatAmount(createdOrder.quantity)}</strong> {createdOrder.unit_name} • الإجمالي:{' '}
-                      <strong className="font-mono" dir="ltr">{formatPrice(createdOrder.total_price)}</strong> ريال
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      go(ROUTES.CONSUMER_ORDER_DETAILS, {
-                        orderId: createdOrder.id,
-                        backTo: ROUTES.CONSUMER_STOCK_DETAILS,
-                        backParams: { stockId: stock.id },
-                      })
-                    }
-                    className="px-3.5 py-2 rounded-xl bg-emerald-solid hover:bg-emerald-solid/90 text-white text-xs font-bold transition cursor-pointer"
-                  >
-                    عرض تفاصيل الطلب
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => go(ROUTES.CONSUMER_ORDERS)}
-                    className="px-3 py-2 rounded-xl border border-emerald-300 bg-canvas hover:bg-emerald-50 text-emerald-800 text-xs font-bold transition cursor-pointer"
-                  >
-                    كل طلباتي
-                  </button>
-                </div>
-              </section>
-            )}
-
             {/* 1) بطاقة الملخص الرئيسية + زر إنشاء الطلب */}
             <section className="mw-service-summary rounded-2xl p-4 sm:p-6 space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -199,7 +202,7 @@ export default function ConsumerStockDetailsPage({
                   </div>
 
                   <h2 className="mw-h2 text-slate-900">
-                    {stock.type?.name || 'مخزون'}
+                    {stock.supplier?.display_name || stock.type?.name || 'مخزون'}
                   </h2>
 
                   <div className="flex items-start gap-2 text-sm text-slate-600">
@@ -287,7 +290,7 @@ export default function ConsumerStockDetailsPage({
                       {!canStartOrder
                         ? 'متاح لحسابات المستفيدين فقط'
                         : isAvailable
-                        ? 'إنشاء طلب جديد'
+                        ? orderLabel
                         : 'غير متاح للطلب حالياً'}
                     </span>
                   </PrimaryBtn>
@@ -477,11 +480,11 @@ export default function ConsumerStockDetailsPage({
 
       {isConsumer && (
         <CreateOrderSheet
-          open={orderSheet.open && isAvailable && !loading}
+          open={orderSheet.open && isAvailable}
           stock={stock}
           initialUnitId={orderSheet.unitId}
           defaultAddress={defaultAddress}
-          onClose={() => setOrderSheet({ open: false, unitId: null })}
+          onClose={closeOrderSheet}
           onSuccess={handleOrderCreated}
           onManageAddresses={() => go(ROUTES.CITIZEN_ADDRESSES)}
           onSessionExpired={onSessionExpired}

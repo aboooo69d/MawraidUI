@@ -14,10 +14,11 @@ export function BackBtn({ onClick, label = 'رجوع' }) {
   )
 }
 
-export function PrimaryBtn({ children, onClick, disabled, loading, className = '', type = 'button' }) {
+export function PrimaryBtn({ children, onClick, disabled, loading, className = '', type = 'button', form }) {
   return (
     <button
       type={type}
+      form={form}
       onClick={onClick}
       disabled={disabled || loading}
       aria-busy={loading || undefined}

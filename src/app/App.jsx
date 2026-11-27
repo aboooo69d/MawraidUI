@@ -1,5 +1,5 @@
 // ═══════════ App — التنقل وإدارة المنظومة ═══════════
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { AuthProvider, useAuth } from './providers/AuthProvider'
 import { getErrorMessage } from '../services/api'
 import { ROUTES } from '../shared/constants/routes'
@@ -65,36 +65,51 @@ function Shell() {
   const { user, clearSession } = useAuth()
   const [screen, setScreen] = useState(ROUTES.HOME)
   const [params, setParams] = useState({})
-  const [orderIntent, setOrderIntent] = useState(null)
+  const [signInIntent, setSignInIntent] = useState(null)
   const [toast, setToast] = useState(null)
+  const toastTimeout = useRef(null)
+  const current = resolveCurrentScreen(screen, user)
+  const viewport = useRef(null)
+  const initializedViewport = useRef(false)
+
+  useLayoutEffect(() => {
+    if (!initializedViewport.current) {
+      initializedViewport.current = true
+      return
+    }
+    window.scrollTo({ top: 0, behavior: 'instant' })
+    viewport.current?.focus({ preventScroll: true })
+  }, [current, params.stockId, params.orderId])
+
+  useEffect(() => () => clearTimeout(toastTimeout.current), [])
 
   const go = useCallback((s, p = {}) => {
-    if (!AUTH_SCREENS.has(s)) setOrderIntent(null)
+    if (!AUTH_SCREENS.has(s)) setSignInIntent(null)
     setParams(p)
     setScreen(s)
-    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    window.scrollTo({ top: 0, behavior: reduceMotion ? 'instant' : 'smooth' })
   }, [])
 
-  function signInForOrder(intent) {
-    setOrderIntent(intent)
+  function signInForStock(screen, params, order = false) {
+    if (user) clearSession()
+    setSignInIntent({ screen, params, order })
     go(ROUTES.LOGIN)
   }
 
   function afterLogin(account) {
-    if (!orderIntent) {
+    if (!signInIntent) {
       go(ROUTES.DASHBOARD)
       return
     }
-    go(ROUTES.CONSUMER_STOCK_DETAILS, {
-      ...orderIntent,
-      resumeOrder: account?.role_name === 'consumer',
+    go(signInIntent.screen, {
+      ...signInIntent.params,
+      resumeOrder: signInIntent.order && account?.role_name === 'consumer',
     })
   }
 
   const showToast = useCallback((msg, ok = true) => {
+    clearTimeout(toastTimeout.current)
     setToast({ msg, ok })
-    setTimeout(() => setToast(null), 3000)
+    toastTimeout.current = setTimeout(() => setToast(null), 3000)
   }, [])
 
   const onAddressSessionExpired = useCallback(() => {
@@ -109,7 +124,8 @@ function Shell() {
       <LoginPage
         go={go}
         onSuccess={afterLogin}
-        onBack={orderIntent ? () => go(ROUTES.CONSUMER_STOCK_DETAILS, orderIntent) : undefined}
+        onBack={signInIntent ? () => go(signInIntent.screen, signInIntent.params) : undefined}
+        orderSignIn={signInIntent?.order}
       />
     ),
     [ROUTES.REGISTER_CONSUMER]: <RegisterConsumer go={go} />,
@@ -126,7 +142,7 @@ function Shell() {
     ),
     [ROUTES.CITIZEN_ADDRESSES]: <CitizenAddressesPage go={go} showToast={showToast} onSessionExpired={onAddressSessionExpired} />,
     [ROUTES.ADMIN_ADDRESSES]: <AdminAddressesPage go={go} onSessionExpired={onAddressSessionExpired} />,
-    [ROUTES.CONSUMER_STOCKS]: <ConsumerStocksPage key={params.resource || 'all'} go={go} resource={params.resource} />,
+    [ROUTES.CONSUMER_STOCKS]: <ConsumerStocksPage key={params.resource || 'all'} go={go} resource={params.resource} onStockSignIn={signInForStock} />,
     [ROUTES.CONSUMER_STOCK_DETAILS]: (
       <ConsumerStockDetailsPage
         key={params.stockId}
@@ -135,7 +151,8 @@ function Shell() {
         resource={params.resource}
         resumeOrder={params.resumeOrder}
         unitId={params.unitId}
-        onOrderSignIn={signInForOrder}
+        onOrderSignIn={(intent) => signInForStock(ROUTES.CONSUMER_STOCK_DETAILS, intent, true)}
+        onStockSignIn={signInForStock}
         showToast={showToast}
         onSessionExpired={onAddressSessionExpired}
       />
@@ -185,11 +202,11 @@ function Shell() {
     ),
   }
 
-  const current = resolveCurrentScreen(screen, user)
-
   return (
     <div className="min-h-screen bg-canvas text-slate-800 font-sans flex flex-col">
-      {screens[current] || <HomePage go={go} />}
+      <div key={current} ref={viewport} tabIndex={-1} className="mw-page flex-1 focus:outline-none">
+        {screens[current] || <HomePage go={go} />}
+      </div>
       <Toast toast={toast} />
     </div>
   )

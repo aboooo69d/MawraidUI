@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ordersApi, stockApi } from '../../../services/api'
 import { BackBtn, ErrorBanner, Icons, SecondaryBtn, ThemeToggle } from '../../../shared/components/ui'
+import { LoadingCards } from '../../../shared/components/ui/Skeleton'
 import { ROUTES } from '../../../shared/constants/routes'
 import {
   CONSUMER_TYPE_OPTIONS,
@@ -391,10 +392,7 @@ export default function ProviderOrdersPage({
 
         {/* 4) قائمة البطاقات */}
         {loading ? (
-          <div className="rounded-2xl border border-slate-200 bg-canvas p-10 text-center space-y-3">
-            <div className="w-8 h-8 mx-auto border-3 border-mawarid-200 border-t-mawarid-700 rounded-full animate-spin" />
-            <p className="text-sm font-bold text-slate-600">جارٍ تحميل الطلبات الواردة…</p>
-          </div>
+          <LoadingCards label="جارٍ تحميل الطلبات الواردة…" count={2} />
         ) : err ? (
           <div className="rounded-2xl border border-slate-200 bg-canvas p-6 space-y-4">
             <ErrorBanner err={err} />

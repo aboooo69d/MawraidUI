@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { ordersApi } from '../../../services/api'
 import { BackBtn, ErrorBanner, Icons, SecondaryBtn, ThemeToggle } from '../../../shared/components/ui'
 import LocationPicker from '../../../shared/components/ui/LocationPicker'
+import { LoadingCards } from '../../../shared/components/ui/Skeleton'
 import { ROUTES } from '../../../shared/constants/routes'
 import {
   formatConsumerType,
@@ -128,10 +129,7 @@ export default function ConsumerOrderDetailsPage({
       {/* ── المحتوى ── */}
       <main className="max-w-4xl w-full mx-auto px-4 sm:px-6 py-6 flex-1 space-y-5 text-right">
         {loading ? (
-          <div className="rounded-2xl border border-slate-200 bg-canvas p-10 text-center space-y-3">
-            <div className="w-8 h-8 mx-auto border-3 border-mawarid-200 border-t-mawarid-700 rounded-full animate-spin" />
-            <p className="text-sm font-bold text-slate-600">جارٍ تحميل تفاصيل الطلب…</p>
-          </div>
+          <LoadingCards label="جارٍ تحميل تفاصيل الطلب…" />
         ) : err ? (
           <div className="rounded-2xl border border-slate-200 bg-canvas p-6 space-y-4">
             <ErrorBanner err={err} />

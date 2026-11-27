@@ -49,7 +49,7 @@ export const stockApi = {
 
   // استكشاف المخزون المتاح للمستفيدين والإدارة (GET /api/v1/stocks)
   // يُرجع { data, meta } مع دعم الفلاتر والفرز الجغرافي.
-  getStocks: async (filters = {}) => {
+  getStocks: async (filters = {}, { signal } = {}) => {
     const params = new URLSearchParams()
 
     if (typeof filters.name === 'string' && filters.name.trim()) {
@@ -95,7 +95,7 @@ export const stockApi = {
     }
 
     const qs = params.toString()
-    const res = await request(qs ? `/stocks?${qs}` : '/stocks', { withMeta: true })
+    const res = await request(qs ? `/stocks?${qs}` : '/stocks', { withMeta: true, signal })
     return {
       data: Array.isArray(res?.data) ? res.data : [],
       meta: res?.meta || null,

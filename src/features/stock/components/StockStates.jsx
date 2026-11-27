@@ -1,16 +1,12 @@
 // ═══════════ حالات العرض الموحدة لشاشات المخزون ═══════════
 import { ROUTES } from '../../../shared/constants/routes'
 import { Icons, ErrorBanner, SecondaryBtn } from '../../../shared/components/ui'
+import { LoadingCards } from '../../../shared/components/ui/Skeleton'
 import { useAuth } from '../../auth/hooks/useAuth'
 
 // حالة التحميل
-export function StockLoading({ label = 'جارٍ تحميل بيانات المخزون…' }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-14 text-center fade-in" role="status" aria-live="polite">
-      <Icons.Refresh className="w-8 h-8 text-mawarid-600 animate-spin" aria-hidden="true" />
-      <p className="mt-3 text-sm font-bold text-slate-500">{label}</p>
-    </div>
-  )
+export function StockLoading({ label = 'جارٍ تحميل بيانات المخزون…', count }) {
+  return <LoadingCards label={label} count={count} />
 }
 
 // حالة الخطأ مع إعادة المحاولة (لا تُعامل أخطاء الخادم كبيانات فارغة)

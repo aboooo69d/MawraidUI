@@ -1,9 +1,11 @@
 // ═══════════ Hook استكشاف المخزون للمستفيد مع العنوان الافتراضي وحساب المسافة ═══════════
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { addressesApi, stockApi } from '../../../services/api'
+import { getResourceTheme } from '../../../shared/constants/resources'
 import { enrichStocksWithDistance, isValidCoords } from '../utils/geo'
 
 const DEFAULT_PAGE_SIZE = 10
+const RESOURCE_PAGE_SIZE = 100
 const SEARCH_DEBOUNCE_MS = 350
 
 export const DEFAULT_FILTERS = {
@@ -13,7 +15,30 @@ export const DEFAULT_FILTERS = {
   maxDistanceKm: null, // null = بدون حد أقصى للمسافة
 }
 
-export function useConsumerStocks({ isConsumer = true, stockType } = {}) {
+async function getResourceStocks(resource, query, signal) {
+  // The catalog is restricted to providers/admins and the API accepts one exact type.
+  // Use the type on each listing, preserving the API's search and distance ordering.
+  const matches = new Map()
+  let page = 1
+  let totalPages = 1
+
+  do {
+    const { data, meta } = await stockApi.getStocks(
+      { ...query, page, page_size: RESOURCE_PAGE_SIZE },
+      { signal },
+    )
+    signal.throwIfAborted()
+    for (const stock of data) {
+      if (getResourceTheme(stock.type?.slug) === resource) matches.set(stock.id, stock)
+    }
+    totalPages = Number(meta?.total_pages) || 1
+    page++
+  } while (page <= totalPages)
+
+  return { data: [...matches.values()], meta: null }
+}
+
+export function useConsumerStocks({ isConsumer = true, canLoadStockTypes = false, resource } = {}) {
   // ── حالة العناوين والموقع ──
   const [addressLoading, setAddressLoading] = useState(Boolean(isConsumer))
   const [addressErr, setAddressErr] = useState(null)
@@ -38,11 +63,12 @@ export function useConsumerStocks({ isConsumer = true, stockType } = {}) {
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState(null)
 
-  const seqRef = useRef(0)
+  const stockRequest = useRef(null)
+  const addressRequest = useRef(0)
 
   // 1) جلب تصنيفات المخزون للفلتر
   useEffect(() => {
-    if (stockType) return
+    if (resource || !canLoadStockTypes) return
     let active = true
     stockApi
       .getStockTypes()
@@ -55,10 +81,11 @@ export function useConsumerStocks({ isConsumer = true, stockType } = {}) {
     return () => {
       active = false
     }
-  }, [stockType])
+  }, [canLoadStockTypes, resource])
 
   // 2) جلب العنوان الافتراضي وقائمة عناوين المستفيد
   const loadAddresses = useCallback(async () => {
+    const sequence = ++addressRequest.current
     if (!isConsumer) {
       setDefaultAddress(null)
       setAddresses([])
@@ -76,6 +103,7 @@ export function useConsumerStocks({ isConsumer = true, stockType } = {}) {
         addressesApi.listMine().catch(() => []),
       ])
 
+      if (sequence !== addressRequest.current) return
       const list = Array.isArray(allAddrs) ? allAddrs : []
       // إذا وُجد عنوان افتراضي ولم يكن ضمن القائمة نضمن وجوده
       const mergedList =
@@ -85,17 +113,19 @@ export function useConsumerStocks({ isConsumer = true, stockType } = {}) {
       setAddresses(mergedList)
       setSelectedAddressId(defAddr?.id || null)
     } catch (e) {
+      if (sequence !== addressRequest.current) return
       setAddressErr(e)
       setDefaultAddress(null)
       setAddresses([])
       setSelectedAddressId(null)
     } finally {
-      setAddressLoading(false)
+      if (sequence === addressRequest.current) setAddressLoading(false)
     }
   }, [isConsumer])
 
   useEffect(() => {
     loadAddresses()
+    return () => { addressRequest.current++ }
   }, [loadAddresses])
 
   // 3) تأخير بسيط (debounce) لحقل البحث النصي
@@ -131,19 +161,22 @@ export function useConsumerStocks({ isConsumer = true, stockType } = {}) {
       : 'none'
 
   // 4) جلب المخزون وتطبيق الفلاتر + حساب المسافة محلياً بالكيلومتر
+  const requestPage = resource ? 1 : page
   const fetchStocks = useCallback(async () => {
     if (addressLoading) return
 
-    const seq = ++seqRef.current
+    stockRequest.current?.abort()
+    const controller = new AbortController()
+    stockRequest.current = controller
+    const { signal } = controller
     setLoading(true)
     setErr(null)
 
     const query = {
       name: filters.name || undefined,
-      stock_type: stockType,
       stock_type_id: filters.stockTypeId || undefined,
       in_stock: typeof filters.inStock === 'boolean' ? filters.inStock : undefined,
-      page,
+      page: requestPage,
       page_size: DEFAULT_PAGE_SIZE,
     }
 
@@ -156,26 +189,26 @@ export function useConsumerStocks({ isConsumer = true, stockType } = {}) {
     }
 
     try {
-      const res = await stockApi.getStocks(query)
-      if (seq !== seqRef.current) return
+      const res = resource
+        ? await getResourceStocks(resource, query, signal)
+        : await stockApi.getStocks(query, { signal })
+      if (signal.aborted) return
       const enriched = enrichStocksWithDistance(res.data, activeCoords)
       setStocks(enriched)
       setMeta(res.meta)
     } catch (e) {
-      if (seq !== seqRef.current) return
+      if (signal.aborted) return
       setStocks([])
       setMeta(null)
       setErr(e)
     } finally {
-      if (seq === seqRef.current) setLoading(false)
+      if (!signal.aborted) setLoading(false)
     }
-  }, [addressLoading, filters, page, activeCoords, stockType])
+  }, [addressLoading, filters, requestPage, activeCoords, resource])
 
   useEffect(() => {
     fetchStocks()
-    return () => {
-      seqRef.current++
-    }
+    return () => stockRequest.current?.abort()
   }, [fetchStocks])
 
   // ── إجراءات التحكم بالفلاتر والموقع ──
@@ -236,7 +269,7 @@ export function useConsumerStocks({ isConsumer = true, stockType } = {}) {
     Boolean(filters.name) ||
     filters.stockTypeId !== null ||
     filters.inStock !== DEFAULT_FILTERS.inStock ||
-    filters.maxDistanceKm !== null
+    (Boolean(activeCoords) && filters.maxDistanceKm !== null)
 
   return {
     // الموقع والعناوين
@@ -256,7 +289,7 @@ export function useConsumerStocks({ isConsumer = true, stockType } = {}) {
     reloadAddresses: loadAddresses,
 
     // الفلاتر
-    stockTypes,
+    stockTypes: canLoadStockTypes ? stockTypes : [],
     searchInput,
     setSearchInput,
     submitSearchNow,
@@ -266,8 +299,8 @@ export function useConsumerStocks({ isConsumer = true, stockType } = {}) {
     hasActiveFilters,
 
     // النتائج والترقيم
-    stocks,
-    meta,
+    stocks: resource ? stocks.slice((page - 1) * DEFAULT_PAGE_SIZE, page * DEFAULT_PAGE_SIZE) : stocks,
+    meta: resource ? { total: stocks.length, total_pages: Math.ceil(stocks.length / DEFAULT_PAGE_SIZE) } : meta,
     page,
     setPage,
     loading: addressLoading || loading,

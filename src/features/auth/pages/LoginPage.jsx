@@ -4,7 +4,7 @@ import { PHONE_RE } from '../../../shared/constants/regex'
 import { Icons, BrandLogo, Logo, ErrorBanner, Label, PhoneInput, TextInput, PrimaryBtn, BackBtn, ThemeToggle } from '../../../shared/components/ui'
 import TurnstileWidget from '../components/TurnstileWidget'
 
-export default function Login({ go, onSuccess, onBack }) {
+export default function Login({ go, onSuccess, onBack, orderSignIn }) {
   const { login } = useAuth()
   const [phone, setPhone] = useState('')
   const [pass, setPass] = useState('')
@@ -44,7 +44,7 @@ export default function Login({ go, onSuccess, onBack }) {
         </button>
         <div className="flex shrink-0 items-center gap-1.5">
           <ThemeToggle />
-          <BackBtn onClick={onBack || (() => go('home'))} label={onBack ? 'العودة لتفاصيل الخدمة' : 'العودة للرئيسية'} />
+          <BackBtn onClick={onBack || (() => go('home'))} label={onBack ? 'العودة إلى المخزون' : 'العودة للرئيسية'} />
         </div>
       </div>
 
@@ -52,7 +52,9 @@ export default function Login({ go, onSuccess, onBack }) {
       <div className="max-w-md w-full mx-auto bg-canvas rounded-3xl border border-slate-200/80 mw-auth-card shadow-card fade-in">
         <Logo
           title="تسجيل الدخول إلى موارد"
-          subtitle="أدخل رقم هاتفك وكلمة المرور للوصول إلى حسابك."
+          subtitle={orderSignIn
+            ? 'سجّل الدخول بحساب مستفيد لمتابعة إنشاء طلبك.'
+            : 'أدخل رقم هاتفك وكلمة المرور للوصول إلى حسابك.'}
         />
 
         <ErrorBanner err={err} />

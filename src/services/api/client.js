@@ -12,10 +12,11 @@ export class ApiError extends Error {
 
 // Envelope: { success: true, data, meta } أو { success: false, error: { code, message } }
 // withMeta: تُرجع { data, meta } للمسارات المرقمة (السجلات) — القيمة الافتراضية تُرجع data فقط كما هي
-export async function request(path, { method = 'GET', body, form, turnstileToken, withMeta = false } = {}) {
+export async function request(path, { method = 'GET', body, form, turnstileToken, withMeta = false, signal } = {}) {
   const opts = {
     method,
     credentials: 'include',
+    ...(signal ? { signal } : {}),
     headers: { Accept: 'application/json' },
   }
 

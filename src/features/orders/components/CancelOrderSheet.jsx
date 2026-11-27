@@ -1,6 +1,6 @@
 // ═══════════ نافذة سفلية (Bottom Sheet) لتأكيد إلغاء طلب قيد الانتظار ═══════════
-import { useEffect, useState } from 'react'
-import { useModalFocus } from '../../../shared/hooks/useModalFocus'
+import { useEffect, useRef, useState } from 'react'
+import OrderSheet from './OrderSheet'
 import { ordersApi } from '../../../services/api'
 import { ErrorBanner, Icons, Label, SecondaryBtn } from '../../../shared/components/ui'
 import {
@@ -28,7 +28,7 @@ export default function CancelOrderSheet({
   const [err, setErr] = useState(null)
 
   const open = Boolean(order)
-  const dialogRef = useModalFocus(open)
+  const submission = useRef(false)
 
   useEffect(() => {
     if (!open) return
@@ -36,27 +36,9 @@ export default function CancelOrderSheet({
     setErr(null)
   }, [open, order?.id])
 
-  useEffect(() => {
-    if (!open) return undefined
-    const prevOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-
-    function handleKeyDown(e) {
-      if (e.key === 'Escape' && !submitting) {
-        onClose?.()
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.body.style.overflow = prevOverflow
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [open, submitting, onClose])
-
-  if (!order) return null
-
   async function handleConfirmCancel(e) {
-    if (e) e.preventDefault()
+    e?.preventDefault()
+    if (!order || submission.current) return
     setErr(null)
 
     const validationErr = validateCancelReason(reason)
@@ -66,6 +48,7 @@ export default function CancelOrderSheet({
     }
 
     const trimmed = reason.trim()
+    submission.current = true
     setSubmitting(true)
     try {
       const updated = await ordersApi.cancelOrder(order.id, trimmed ? { reason: trimmed } : {})
@@ -77,27 +60,14 @@ export default function CancelOrderSheet({
       }
       setErr(e2)
     } finally {
+      submission.current = false
       setSubmitting(false)
     }
   }
 
   return (
-    <div
-      dir="rtl"
-      className="fixed inset-0 z-[1200] flex items-end justify-center"
-      ref={dialogRef}
-      tabIndex={-1}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="cancel-order-sheet-title"
-    >
-      <div
-        className="fixed inset-0 bg-scrim/55"
-        onClick={() => !submitting && onClose?.()}
-        aria-hidden="true"
-      />
-
-      <div className="sheet-up relative z-10 w-full max-w-lg bg-canvas rounded-t-3xl border-t border-x border-slate-200 shadow-2xl max-h-[90dvh] flex flex-col overflow-hidden text-right">
+    <OrderSheet open={open} busy={submitting} onClose={onClose} titleId="cancel-order-sheet-title">
+      {order && <>
         <div className="px-5 sm:px-6 pt-3 pb-4 border-b border-slate-100">
           <div className="w-12 h-1.5 rounded-full bg-slate-200 mx-auto mb-3" aria-hidden="true" />
           <div className="flex items-start justify-between gap-3">
@@ -199,7 +169,7 @@ export default function CancelOrderSheet({
             </SecondaryBtn>
           </div>
         </form>
-      </div>
-    </div>
+      </>}
+    </OrderSheet>
   )
 }

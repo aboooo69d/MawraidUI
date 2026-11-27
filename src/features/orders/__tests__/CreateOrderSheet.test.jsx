@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // ═══════════ اختبارات النافذة السفلية لإنشاء الطلب (CreateOrderSheet) ═══════════
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, cleanup, within, act } from '@testing-library/react'
 import CreateOrderSheet from '../components/CreateOrderSheet'
 
 vi.mock('../../auth/hooks/useAuth', () => {
@@ -141,4 +141,51 @@ describe('CreateOrderSheet', () => {
       expect(screen.getByText('صفة المستفيد المختارة غير مفعّلة في ملف حسابك')).toBeTruthy()
     })
   })
+
+  it('coalesces rapid form submissions while a request is pending', async () => {
+    let finish
+    const response = new Promise((resolve) => { finish = resolve })
+    const fetchMock = vi.fn(async (url) => url.endsWith('/addresses/me')
+      ? jsonResponse({ success: true, data: SAMPLE_ADDRESSES })
+      : response)
+    vi.stubGlobal('fetch', fetchMock)
+
+    const onSuccess = vi.fn()
+    render(<CreateOrderSheet open stock={SAMPLE_STOCK} onSuccess={onSuccess} />)
+    await screen.findByText('المنزل')
+    const submit = screen.getByRole('button', { name: 'تأكيد وإنشاء الطلب' })
+    const form = submit.form
+    act(() => {
+      fireEvent.submit(form)
+      fireEvent.submit(form)
+    })
+    expect(fetchMock.mock.calls.filter(([url]) => url.endsWith('/orders'))).toHaveLength(1)
+    expect(submit.disabled).toBe(true)
+    finish(jsonResponse({ success: true, data: { id: 'new-order' } }))
+    await waitFor(() => expect(onSuccess).toHaveBeenCalledOnce())
+  })
+
+  it('preserves edited quantity when the cached default arrives after opening', async () => {
+    const fetchMock = vi.fn(async () => jsonResponse({ success: true, data: SAMPLE_ADDRESSES }))
+    vi.stubGlobal('fetch', fetchMock)
+    const { rerender } = render(<CreateOrderSheet open stock={SAMPLE_STOCK} />)
+    await screen.findByText('المنزل')
+    fireEvent.click(screen.getByLabelText('زيادة الكمية'))
+
+    rerender(<CreateOrderSheet open stock={SAMPLE_STOCK} defaultAddress={SAMPLE_ADDRESSES[0]} />)
+    expect(screen.getByLabelText(/الكمية المطلوبة/).value).toBe('2')
+    expect(fetchMock).toHaveBeenCalledOnce()
+  })
+
+  it('removes the closed sheet immediately with reduced motion', async () => {
+    vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: true })))
+    vi.stubGlobal('fetch', vi.fn(async () => jsonResponse({ success: true, data: SAMPLE_ADDRESSES })))
+    const { rerender } = render(<CreateOrderSheet open stock={SAMPLE_STOCK} />)
+    const dialog = screen.getByRole('dialog')
+    expect(await within(dialog).findByText('المنزل')).toBeTruthy()
+    rerender(<CreateOrderSheet open={false} stock={SAMPLE_STOCK} />)
+    expect(document.body.contains(dialog)).toBe(false)
+    expect(document.body.style.overflow).toBe('')
+  })
+
 })

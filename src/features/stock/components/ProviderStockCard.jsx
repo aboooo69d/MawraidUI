@@ -17,7 +17,7 @@ export default function ProviderStockCard({ go, refreshTrigger = 0 }) {
     }
   }, [refreshTrigger, reload])
 
-  if (status === 'loading') return <StockLoading label="جارٍ تحميل قائمة المخازن…" />
+  if (status === 'loading') return <StockLoading label="جارٍ تحميل قائمة المخازن…" count={2} />
 
   if (status === 'error') {
     return isSessionExpired(err) ? <SessionExpiredState go={go} /> : <StockErrorState err={err} onRetry={reload} />

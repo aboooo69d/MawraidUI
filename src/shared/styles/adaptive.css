@@ -53,8 +53,11 @@
     --mw-radius-xl: 24px;
 
     --mw-motion-fast: 150ms;
-    --mw-motion-normal: 250ms;
-    --mw-motion-page: 350ms;
+    --mw-motion-dropdown: 180ms;
+    --mw-motion-page: 250ms;
+    --mw-motion-theme: 250ms;
+    --mw-motion-sheet: 280ms;
+    --mw-motion-success: 350ms;
     --mw-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     --mw-shadow-xs: 0 1px 2px rgb(15 23 42 / 0.05);
     --mw-shadow-card: 0 1px 3px rgb(15 23 42 / 0.06), 0 8px 24px -8px rgb(15 23 42 / 0.10);
@@ -128,8 +131,8 @@
     color: var(--mw-text);
   }
 
-  #root > div, #root > div > div:first-child {
-    transition: background-color var(--mw-motion-fast) var(--mw-ease-out);
+  :is(html, body, .mw-page, .mw-page > div, header, main, footer, section, article, .mw-sheet-panel) {
+    transition: background-color var(--mw-motion-theme), color var(--mw-motion-theme), border-color var(--mw-motion-theme);
   }
 
   body { font-family: Tajawal, 'Noto Sans Arabic', system-ui, sans-serif; font-weight: 500; line-height: 1.6; }
@@ -260,8 +263,33 @@
 
 @layer utilities {
   .mw-service-card { border-inline-start: 3px solid var(--mw-accent); }
-  .fade-in, .mw-fade-in { animation: mw-fade-in var(--mw-motion-page) var(--mw-ease-out); }
-  .sheet-up { animation: mw-sheet-up var(--mw-motion-normal) var(--mw-ease-out); }
+  .fade-in, .mw-fade-in, .mw-page { animation: mw-fade-in var(--mw-motion-page) var(--mw-ease-out); }
+  .mw-success-in { animation: mw-fade-in var(--mw-motion-success) var(--mw-ease-out); }
+  .mw-stock-enter {
+    animation: mw-fade-in var(--mw-motion-page) var(--mw-ease-out) both;
+    animation-delay: calc(var(--mw-stagger-index, 0) * 24ms);
+  }
+  .mw-stock-card { min-block-size: 12rem; }
+  .mw-skeleton { background-color: var(--mw-surface-raised); }
+  .mw-stock-search::-webkit-search-cancel-button { appearance: none; }
+  .mw-dropdown {
+    opacity: 0;
+    translate: 0 -4px;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity var(--mw-motion-dropdown), translate var(--mw-motion-dropdown), visibility var(--mw-motion-dropdown);
+  }
+  .mw-dropdown[data-open="true"] {
+    opacity: 1;
+    translate: none;
+    visibility: visible;
+    pointer-events: auto;
+  }
+  .mw-sheet-panel { animation: mw-sheet-up var(--mw-motion-sheet) var(--mw-ease-out) both; }
+  .mw-sheet-backdrop { animation: mw-opacity-in var(--mw-motion-sheet) var(--mw-ease-out) both; }
+  .mw-sheet[data-state="closing"] { pointer-events: none; }
+  .mw-sheet[data-state="closing"] .mw-sheet-panel { animation-name: mw-sheet-down; }
+  .mw-sheet[data-state="closing"] .mw-sheet-backdrop { animation-name: mw-opacity-out; }
 }
 
 @keyframes mw-fade-in {
@@ -271,11 +299,27 @@
 
 @keyframes mw-sheet-up {
   from { translate: 0 100%; }
-  to { translate: 0 0; }
+  to { translate: none; }
+}
+
+@keyframes mw-sheet-down {
+  from { translate: none; }
+  to { translate: 0 100%; }
+}
+
+@keyframes mw-opacity-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes mw-opacity-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
+    animation-delay: 0ms !important;
     animation-duration: .01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: .01ms !important;

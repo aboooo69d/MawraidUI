@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ordersApi } from '../../../services/api'
 import { BackBtn, ErrorBanner, Icons, SecondaryBtn, ThemeToggle } from '../../../shared/components/ui'
+import { LoadingCards } from '../../../shared/components/ui/Skeleton'
 import { ROUTES } from '../../../shared/constants/routes'
 import {
   CONSUMER_TYPE_OPTIONS,
@@ -257,10 +258,7 @@ export default function ConsumerOrdersPage({
 
         {/* القائمة */}
         {loading ? (
-          <div className="rounded-2xl border border-slate-200 bg-canvas p-10 text-center space-y-3">
-            <div className="w-8 h-8 mx-auto border-3 border-mawarid-200 border-t-mawarid-700 rounded-full animate-spin" />
-            <p className="text-sm font-bold text-slate-600">جارٍ تحميل قائمة الطلبات…</p>
-          </div>
+          <LoadingCards label="جارٍ تحميل قائمة الطلبات…" count={2} />
         ) : err ? (
           <div className="rounded-2xl border border-slate-200 bg-canvas p-6 space-y-4">
             <ErrorBanner err={err} />

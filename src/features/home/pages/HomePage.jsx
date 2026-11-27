@@ -32,7 +32,7 @@ const PROCESS = [
 ]
 
 const sectionWidth = 'w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8'
-const navClass = 'inline-flex items-center min-h-11 rounded-lg px-2.5 text-sm font-bold text-slate-700 hover:text-mawarid-700 hover:bg-slate-50 transition-colors'
+const navClass = 'inline-flex items-center min-h-11 rounded-lg px-2.5 text-sm font-bold text-slate-700 hover:text-mawarid-700 hover:bg-slate-50 transition-colors duration-150'
 
 export default function HomePage({ go }) {
   const { user } = useAuth()
@@ -80,16 +80,20 @@ export default function HomePage({ go }) {
                   إنشاء حساب
                   <Icons.ChevronDown className={`hidden sm:block h-4 w-4 ${regOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
                 </button>
-                <div id="registration-options" hidden={!regOpen}>
-                  <div className="fixed inset-0 z-40" onClick={() => setRegOpen(false)} aria-hidden="true" />
-                  <div className="absolute end-0 z-50 mt-2 w-52 rounded-xl border border-slate-200 bg-canvas p-2 shadow-card fade-in">
+                {regOpen && <div className="fixed inset-0 z-40" onClick={() => setRegOpen(false)} aria-hidden="true" />}
+                <div
+                  id="registration-options"
+                  data-open={regOpen}
+                  aria-hidden={!regOpen || undefined}
+                  inert={regOpen ? undefined : ''}
+                  className="mw-dropdown absolute end-0 z-50 mt-2 w-52 rounded-xl border border-slate-200 bg-canvas p-2 shadow-card"
+                >
                     <button type="button" onClick={() => go(ROUTES.REGISTER_CONSUMER)} className={`${navClass} w-full gap-2`}>
                       <Icons.User className="w-5 h-5" aria-hidden="true" /> مواطن / مستفيد
                     </button>
                     <button type="button" onClick={() => go(ROUTES.REGISTER_PROVIDER)} className={`${navClass} w-full gap-2`}>
                       <Icons.Business className="w-5 h-5" aria-hidden="true" /> وكيل / مقدم خدمة
                     </button>
-                  </div>
                 </div>
               </div>
             )}
@@ -107,7 +111,7 @@ export default function HomePage({ go }) {
             </button>
           </div>
         </div>
-        <nav id="mobile-menu" aria-label="قائمة الجوال" hidden={!menuOpen} onKeyDown={(event) => closeOnEscape(event, setMenuOpen, menuButton)} className="lg:hidden border-t border-slate-200 px-4 py-2 fade-in">
+        <nav id="mobile-menu" aria-label="قائمة الجوال" data-open={menuOpen} aria-hidden={!menuOpen || undefined} inert={menuOpen ? undefined : ''} onKeyDown={(event) => closeOnEscape(event, setMenuOpen, menuButton)} className="mw-dropdown absolute inset-x-0 top-full z-40 border-y border-slate-200 bg-canvas px-4 py-2 shadow-card lg:hidden">
           {NAV_LINKS.map(({ href, label }) => <a key={href} href={href} onClick={() => setMenuOpen(false)} className={`${navClass} w-full`}>{label}</a>)}
           <button type="button" onClick={openAccount} className={`${navClass} w-full md:hidden`}>{accountLabel}</button>
         </nav>
@@ -115,7 +119,7 @@ export default function HomePage({ go }) {
 
       <main id="main" tabIndex={-1}>
         <section id="top" className={`${sectionWidth} pt-10 pb-8 sm:pt-16 sm:pb-12`}>
-          <div className="max-w-2xl mw-fade-in">
+          <div className="max-w-2xl">
             <p className="inline-flex items-center gap-2 mb-3 text-sm font-bold text-mawarid-700">
               <Icons.MapPin className="w-5 h-5" aria-hidden="true" /> مدينة تعز، اليمن
             </p>

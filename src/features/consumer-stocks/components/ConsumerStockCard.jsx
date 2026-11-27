@@ -1,4 +1,3 @@
-// ═══════════ بطاقة عرض مخزون للمستفيد مع المسافة بالكيلومتر ═══════════
 import { getResourceTheme } from '../../../shared/constants/resources'
 import { Icons } from '../../../shared/components/ui'
 import { formatAmount, formatDateTime, formatGazStockType, formatPrice } from '../utils/format'
@@ -15,18 +14,17 @@ export function StockTypeIcon({ slug }) {
   )
 }
 
-export default function ConsumerStockCard({ stock, onSelect }) {
+export default function ConsumerStockCard({ stock, index = 0, onSelect }) {
   const resource = getResourceTheme(stock.type?.slug)
   const isAvailable = Number(stock.available) > 0
-  const mainUnit = stock.units?.find((u) => u.is_main) || stock.units?.[0]
-  const balances = Array.isArray(stock.balances) ? stock.balances : []
-  const gazTypeLabel = formatGazStockType(stock.stock_details?.gaz_stock_type)
+  const mainUnit = stock.units?.find((unit) => unit.is_main) || stock.units?.[0]
+  const gasType = formatGazStockType(stock.stock_details?.gaz_stock_type)
+  const hasPrice = mainUnit?.price != null
   const clickable = typeof onSelect === 'function'
 
-  function handleKeyDown(e) {
-    if (!clickable) return
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
+  function handleKeyDown(event) {
+    if (clickable && (event.key === 'Enter' || event.key === ' ')) {
+      event.preventDefault()
       onSelect(stock)
     }
   }
@@ -38,110 +36,58 @@ export default function ConsumerStockCard({ stock, onSelect }) {
       tabIndex={clickable ? 0 : undefined}
       onClick={clickable ? () => onSelect(stock) : undefined}
       onKeyDown={handleKeyDown}
-      className={`mw-service-card min-w-0 rounded-2xl border border-slate-200 bg-canvas p-4 sm:p-5 hover:border-mawarid-300 transition flex flex-col justify-between gap-4 ${
-        clickable ? 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-mawarid-600/25 focus:border-mawarid-500' : ''
-      }`}
+      style={{ '--mw-stagger-index': Math.min(index, 5) }}
+      className={`mw-service-card mw-stock-card mw-stock-enter min-w-0 rounded-2xl border border-slate-200 bg-canvas p-3.5 flex flex-col gap-2.5 transition-colors hover:border-mawarid-300 ${clickable ? 'cursor-pointer' : ''}`}
     >
-      <div className="space-y-3">
-        {/* ── الترويسة: التصنيف + شارة المسافة + التوفر ── */}
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl mw-resource text-sm font-bold">
-              <StockTypeIcon slug={stock.type?.slug} />
-              <span>{stock.type?.name || 'مخزون'}</span>
-            </span>
-
-            {gazTypeLabel && (
-              <span className="inline-flex items-center px-2.5 py-1 rounded-xl mw-resource text-xs font-bold">
-                {gazTypeLabel}
-              </span>
-            )}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-1.5">
-            {stock.distance_formatted && (
-              <span
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-mawarid-50 border border-mawarid-200 text-mawarid-800 text-xs font-black"
-                title={`المسافة التقريبية: ${stock.distance_km} كم`}
-              >
-                <Icons.MapPin className="w-3.5 h-3.5 shrink-0" />
-                <span>{stock.distance_formatted}</span>
-              </span>
-            )}
-
-            <span
-              className={`px-2.5 py-1 rounded-xl text-[11px] font-black border ${
-                isAvailable
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                  : 'bg-rose-50 text-rose-700 border-rose-200'
-              }`}
-            >
-              {isAvailable ? 'متوفر' : 'نفد المخزون'}
-            </span>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <StockTypeIcon slug={stock.type?.slug} />
+          <div className="min-w-0">
+            <h2 className="truncate text-sm font-black text-slate-900">
+              {stock.supplier?.display_name || stock.type?.name || 'مخزون'}
+            </h2>
+            {gasType && <p className="text-xs text-mawarid-800">{gasType}</p>}
           </div>
         </div>
-
-        {/* ── العنوان ── */}
-        <div className="flex items-start gap-2 text-sm text-slate-700">
-          <Icons.MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
-          <p className="font-bold text-slate-900 leading-relaxed break-words">
-            {stock.address || 'عنوان غير محدد'}
-          </p>
-        </div>
-
-        {/* ── الكمية المتوفرة والأرصدة حسب الوحدات ── */}
-        <div className="rounded-xl bg-slate-50 border border-slate-100 p-3.5 space-y-2">
-          <div className="flex flex-wrap items-center justify-between gap-1 text-sm">
-            <span className="text-slate-500 font-bold">الكمية المتوفرة</span>
-            <span className={`font-black text-sm ${isAvailable ? 'text-emerald-700' : 'text-rose-700'}`}>
-              <span className="font-mono" dir="ltr">{formatAmount(stock.available)}</span>{' '}
-              <span>{mainUnit?.name || ''}</span>
-            </span>
-          </div>
-
-          {balances.length > 0 && (
-            <div className="pt-2 border-t border-slate-200/70 flex flex-wrap gap-1.5">
-              {balances.map((b) => {
-                const unitObj = stock.units?.find((u) => u.id === b.unit_id || u.name === b.unit)
-                return (
-                  <span
-                    key={b.unit_id}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-canvas border border-slate-200 text-[11px] text-slate-700 font-bold"
-                  >
-                    <span className="font-mono text-slate-900" dir="ltr">{formatAmount(b.amount)}</span>
-                    <span>{b.unit}</span>
-                    {unitObj?.price !== undefined && unitObj?.price !== null && (
-                      <span className="text-mawarid-700 font-normal mr-1">
-                        (<span className="font-mono" dir="ltr">{formatPrice(unitObj.price)}</span>)
-                      </span>
-                    )}
-                  </span>
-                )
-              })}
-            </div>
-          )}
-        </div>
+        <span className={`shrink-0 rounded-lg border px-2 py-0.5 text-[11px] font-bold ${isAvailable
+          ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+          : 'border-rose-200 bg-rose-50 text-rose-800'}`}>
+          {isAvailable ? 'متوفر' : 'نفد المخزون'}
+        </span>
       </div>
 
-      {/* ── تذييل البطاقة: آخر تحديث + عرض التفاصيل ── */}
-      <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-[11px] text-slate-400">
-        <span className="inline-flex items-center gap-1">
-          <Icons.Clock className="w-3.5 h-3.5" />
-          <span>آخر تحديث: {formatDateTime(stock.updated_at)}</span>
-        </span>
-        <div className="flex items-center gap-2">
-          {typeof stock.distance_km === 'number' && (
-            <span className="font-mono text-slate-500" dir="ltr">
-              {stock.distance_km.toFixed(1)} km
-            </span>
-          )}
-          {clickable && (
-            <span className="inline-flex items-center gap-1 font-bold text-mawarid-700">
-              <span>التفاصيل</span>
-              <Icons.ArrowLeft className="w-3.5 h-3.5" />
-            </span>
-          )}
+      <div className="flex items-start gap-1.5 text-sm text-slate-700">
+        <Icons.MapPin className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" aria-hidden="true" />
+        <p className="line-clamp-2 break-words">{stock.address || 'عنوان غير محدد'}</p>
+      </div>
+
+      <dl className="mt-auto grid grid-cols-2 gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+        <div className="min-w-0">
+          <dt className="text-xs font-bold text-slate-500">الكمية المتوفرة</dt>
+          <dd className="break-words text-sm font-black text-slate-900">
+            <bdi>{formatAmount(stock.available)}</bdi> {mainUnit?.name}
+          </dd>
         </div>
+        <div className="min-w-0">
+          <dt className="text-xs font-bold text-slate-500">سعر الوحدة</dt>
+          <dd className="break-words text-sm font-black text-mawarid-800">
+            {hasPrice ? <><bdi>{formatPrice(mainUnit.price)}</bdi> ريال</> : 'غير محدد'}
+          </dd>
+        </div>
+      </dl>
+
+      <div className="flex flex-wrap items-center justify-between gap-1.5 text-xs text-slate-500">
+        {stock.distance_formatted ? (
+          <span className="inline-flex items-center gap-1 font-bold text-mawarid-800">
+            <Icons.Navigation className="h-3.5 w-3.5" aria-hidden="true" />
+            {stock.distance_formatted}
+          </span>
+        ) : <span>آخر تحديث {formatDateTime(stock.updated_at)}</span>}
+        {clickable && (
+          <span className="ms-auto inline-flex items-center gap-1 font-bold text-mawarid-800">
+            التفاصيل <Icons.ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+          </span>
+        )}
       </div>
     </article>
   )
